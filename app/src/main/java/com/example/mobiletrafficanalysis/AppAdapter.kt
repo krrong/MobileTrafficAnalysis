@@ -7,7 +7,7 @@ import android.view.ViewGroup
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 
-class AppAdapter(private val context : Context, val appList : ArrayList<String>) : RecyclerView.Adapter<AppAdapter.ViewHolder>() {
+class AppAdapter(private val context : Context, val appList : ArrayList<Data>) : RecyclerView.Adapter<AppAdapter.ViewHolder>() {
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val view = LayoutInflater.from(context).inflate(R.layout.app_list_activity, parent, false)
 
@@ -24,9 +24,11 @@ class AppAdapter(private val context : Context, val appList : ArrayList<String>)
 
     inner class ViewHolder(view : View) : RecyclerView.ViewHolder(view){
         private val appName = itemView.findViewById<TextView>(R.id.packageName)
+        private val txBytes = itemView.findViewById<TextView>(R.id.txBytes)
 
-        fun bind(item: String){
-            appName?.text = item
+        fun bind(item: Data){
+            appName?.text = item.getPackageName()
+            txBytes?.text = item.getTxBytes().toString()
         }
     }
 }
