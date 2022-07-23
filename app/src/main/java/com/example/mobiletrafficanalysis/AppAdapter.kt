@@ -1,0 +1,32 @@
+package com.example.mobiletrafficanalysis
+
+import android.content.Context
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.widget.TextView
+import androidx.recyclerview.widget.RecyclerView
+
+class AppAdapter(private val context : Context, val appList : ArrayList<String>) : RecyclerView.Adapter<AppAdapter.ViewHolder>() {
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+        val view = LayoutInflater.from(context).inflate(R.layout.app_list_activity, parent, false)
+
+        return ViewHolder(view);
+    }
+
+    override fun getItemCount(): Int {
+        return appList.size
+    }
+
+    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+        holder?.bind(appList[position])
+    }
+
+    inner class ViewHolder(view : View) : RecyclerView.ViewHolder(view){
+        private val appName = itemView.findViewById<TextView>(R.id.packageName)
+
+        fun bind(item: String){
+            appName?.text = item
+        }
+    }
+}
