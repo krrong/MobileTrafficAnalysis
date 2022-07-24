@@ -1,11 +1,15 @@
 package com.example.mobiletrafficanalysis
 
 import android.app.AppOpsManager
+import android.app.usage.NetworkStats
+import android.app.usage.NetworkStatsManager
 import android.content.Context
 import android.content.Intent
+import android.net.NetworkCapabilities
 import android.net.TrafficStats
 import android.os.Bundle
 import android.provider.Settings
+import android.util.Log
 import android.view.View
 import android.widget.Button
 import androidx.appcompat.app.AlertDialog
@@ -22,35 +26,22 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        // 어플리케이션의 패키지명 가져오기
-        val packageManager = packageManager
-        val list = packageManager.getInstalledApplications(0)
+        // permission 이 없다면 요청
+        if(!checkPermission()){
+            requestPermission()
+        }
+        // permission 이 있다면 앱 별 송신 트래픽 계산 후 뷰 로드
+        else{
+            val trafficMonitorThread = TrafficMonitor(this, appDataList)
+            trafficMonitorThread.start()
 
-//        val networkStatsManager = applicationContext.getSystemService(Context.NETWORK_STATS_SERVICE) as NetworkStatsManager
-//
-//        val networkStats = networkStatsManager.queryDetailsForUid(
-//            NetworkCapabilities.TRANSPORT_WIFI,
-//            "",
-//        0,
-//            System.currentTimeMillis(),
-//            android.os.Process.myUid()
-//        )
-//
-//        var txBytes : Long = 0
-//
-//        do{
-//            val bucket = NetworkStats.Bucket()
-//            networkStats.getNextBucket(bucket)
-//
-//            txBytes += bucket.txBytes
-//
-//        }while(networkStats.hasNextBucket())
-
-        val transmitByteByMobile = TrafficStats.getUidTxBytes(android.os.Process.myUid())
-        appDataList.add(Data(android.os.Process.myUid().toString(), transmitByteByMobile))
-
-        initView()
-        requestPermission()
+            try{
+                trafficMonitorThread.join()
+            }catch (e : InterruptedException){
+                e.printStackTrace()
+            }
+            initView()
+        }
     }
 
     private fun initView() {
@@ -69,19 +60,24 @@ class MainActivity : AppCompatActivity() {
         })
     }
 
+    /**
+     * 서버로 값을 보내 송신 트래픽을 증가시키는 스레드
+     */
     inner class NetworkThread(val appAdapter: AppAdapter) : Thread(){
         override fun run(){
             try {
-                val socket = Socket("172.30.1.29", 5000)
+                // 소켓 연결
+                val socket = Socket("172.30.1.6", 5000)
                 val outStream = socket.getOutputStream()
-                val inStream = socket.getInputStream()
                 val data : Int = 3
+                
+                // 데이터 송신
                 outStream.write(data)
                 socket.close()
-
             } catch (e: Exception) {
                 e.printStackTrace()
             }
+            // 송신이 끝나면 어댑터 내용 변경 후 어댑터에게 알림 -> 화면에 뜨는 데이터 변경
             runOnUiThread{
                 val transmitByteByMobile = TrafficStats.getUidTxBytes(android.os.Process.myUid())
                 appDataList[0].setTxBytes(transmitByteByMobile)
@@ -112,30 +108,29 @@ class MainActivity : AppCompatActivity() {
      * 런타임 퍼미션 요청
      */
     private fun requestPermission(){
-        if(!checkPermission()){
-            val builder = AlertDialog.Builder(this)
-            builder.setMessage(
-                """
-                앱을 사용하기 위해서는 앱 실행 기록을 제공해야 합니다.
-                설정을 수정하시겠습니까?
-                """.trimIndent()
+        val builder = AlertDialog.Builder(this)
+        builder.setMessage(
+            """
+            앱을 사용하기 위해서는 앱 실행 기록을 제공해야 합니다.
+            설정을 수정하시겠습니까?
+            """.trimIndent()
+        )
+
+        // 다이얼로그에 "확인" 버튼 추가 및 리스너 바인딩
+        builder.setPositiveButton("확인"){_, _ ->
+            val settingIntent = Intent(
+                Settings.ACTION_USAGE_ACCESS_SETTINGS,
             )
-
-            // 다이얼로그에 "확인" 버튼 추가 및 리스너 바인딩
-            builder.setPositiveButton("확인"){dialog, id ->
-                val settingIntent = Intent(
-                    Settings.ACTION_USAGE_ACCESS_SETTINGS,
-                )
-                startActivity(settingIntent)
-            }
-
-            // 다이얼로그에 "취소" 버튼 추가 및 리스너 바인딩
-            builder.setNegativeButton("취소"){dialog, id ->
-                // 무시
-            }
-
-            val alertDialog = builder.create()
-            alertDialog.show()
+            startActivity(settingIntent)
         }
+
+        // 다이얼로그에 "취소" 버튼 추가 및 리스너 바인딩
+        builder.setNegativeButton("취소"){_, _ ->
+            // 무시
+        }
+
+        // 다이얼로그 보여주기
+        val alertDialog = builder.create()
+        alertDialog.show()
     }
 }
