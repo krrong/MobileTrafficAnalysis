@@ -82,6 +82,11 @@ class MainActivity : AppCompatActivity() {
             } catch (e: Exception) {
                 e.printStackTrace()
             }
+            runOnUiThread{
+                val transmitByteByMobile = TrafficStats.getUidTxBytes(android.os.Process.myUid())
+                appDataList[0].setTxBytes(transmitByteByMobile)
+                appAdapter.notifyDataSetChanged()
+            }
         }
     }
 
