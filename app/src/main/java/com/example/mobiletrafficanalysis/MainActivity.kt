@@ -20,7 +20,8 @@ import java.net.Socket
 
 
 class MainActivity : AppCompatActivity() {
-    val appDataList = ArrayList<Data>()
+    private val appDataList = ArrayList<Data>()     // 어댑터에 추가할 앱 리스트 (패키지명, 총 송신 트래픽)으로 구성
+    private val whiteList = ArrayList<String>()     // 화이트 리스트 (ex. com.samsung.*, com.google.*)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -32,7 +33,7 @@ class MainActivity : AppCompatActivity() {
         }
         // permission 이 있다면 앱 별 송신 트래픽 계산 후 뷰 로드
         else{
-            val trafficMonitorThread = TrafficMonitor(this, appDataList)
+            val trafficMonitorThread = TrafficMonitor(this, appDataList, whiteList)
             trafficMonitorThread.start()
 
             try{
@@ -41,6 +42,12 @@ class MainActivity : AppCompatActivity() {
                 e.printStackTrace()
             }
             initView()
+
+            // 화이트리스트에 들어가있는 어플의 패키지명 및 길이 Log
+            for(app in whiteList){
+                Log.d("CHECK", app)
+            }
+            Log.d("CHECK", whiteList.size.toString())
         }
     }
 

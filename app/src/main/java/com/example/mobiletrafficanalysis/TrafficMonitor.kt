@@ -7,7 +7,7 @@ import android.net.NetworkCapabilities
 import android.util.Log
 
 
-class TrafficMonitor(private var context: Context, private var appDataList : ArrayList<Data>) : Thread() {
+class TrafficMonitor(private var context: Context, private var appDataList : ArrayList<Data>, private var whiteList : ArrayList<String>) : Thread() {
     override fun run() {
         // 어플리케이션의 패키지명 가져오기
         val packageManager = context.packageManager
@@ -41,6 +41,11 @@ class TrafficMonitor(private var context: Context, private var appDataList : Arr
 
             // appDataList 에 (패키지명, 총 송신 트래픽) 추가
             appDataList.add(Data(app.packageName, txBytes))
+
+            // com.google.* or com.samsung.* 으로 시작하는 패키지명은  whiteList 에 등록
+            if(app.packageName.startsWith("com.google.") || app.packageName.startsWith("com.samsung.")){
+                whiteList.add(app.packageName)
+            }
         }
     }
 }
