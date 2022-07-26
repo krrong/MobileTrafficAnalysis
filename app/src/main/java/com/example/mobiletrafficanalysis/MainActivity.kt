@@ -17,11 +17,15 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import java.net.Socket
+import java.util.*
+import kotlin.collections.ArrayList
+import kotlin.collections.HashMap
 
 
 class MainActivity : AppCompatActivity() {
     private val appDataList = ArrayList<Data>()     // 어댑터에 추가할 앱 리스트 (패키지명, 총 송신 트래픽)으로 구성
     private val whiteList = ArrayList<String>()     // 화이트 리스트 (ex. com.samsung.*, com.google.*)
+    private val appData = HashMap<Int, Int>()       // 앱별 송신 트래픽 변화량 체크를 위한 자료구조
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -33,26 +37,36 @@ class MainActivity : AppCompatActivity() {
         }
         // permission 이 있다면 앱 별 송신 트래픽 계산 후 뷰 로드
         else{
-            val trafficMonitorThread = TrafficMonitor(this, appDataList, whiteList)
-            trafficMonitorThread.start()
+            val recyclerView = findViewById<RecyclerView>(R.id.recyclerView)
+            initView(recyclerView)
 
-            try{
-                trafficMonitorThread.join()
-            }catch (e : InterruptedException){
-                e.printStackTrace()
-            }
-            initView()
+            val trafficMonitor = TrafficMonitor(this, appDataList, whiteList)
 
-            // 화이트리스트에 들어가있는 어플의 패키지명 및 길이 Log
-            for(app in whiteList){
-                Log.d("CHECK", app)
-            }
-            Log.d("CHECK", whiteList.size.toString())
+            var timer = Timer()
+            timer.schedule(object : TimerTask(){
+                override fun run(){
+                    try{
+                        var start = System.currentTimeMillis()
+                        trafficMonitor.getTxBytesForAllApp()
+                        var end = System.currentTimeMillis()
+                        Log.d("elapse time", (end-start).toString())
+                    }catch(e : Exception){
+                        Log.e("MainActivity", e.toString())
+                    }
+
+                    runOnUiThread{
+                        recyclerView.adapter?.notifyDataSetChanged()
+                    }
+
+                    Log.d("whiteList size : ", whiteList.size.toString())
+                    Log.d("appDataList size : ", appDataList.size.toString())
+
+                }
+            }, 0, 20000) // delay는 task가 처음 실행될 때 영향, period는 task가 실행될 때마다 영향
         }
     }
 
-    private fun initView() {
-        val recyclerView = findViewById<RecyclerView>(R.id.recyclerView)
+    private fun initView(recyclerView : RecyclerView) {
         val layoutManager = LinearLayoutManager(this)
         val appAdapter = AppAdapter(this, appDataList)
 
