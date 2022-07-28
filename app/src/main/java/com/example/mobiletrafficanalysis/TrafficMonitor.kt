@@ -3,70 +3,90 @@ package com.example.mobiletrafficanalysis
 import android.app.usage.NetworkStats
 import android.app.usage.NetworkStatsManager
 import android.content.Context
+import android.content.pm.ApplicationInfo
 import android.net.NetworkCapabilities
+import android.os.Build
+import android.telephony.TelephonyManager
 import android.util.Log
+import androidx.annotation.RequiresApi
 
 
-class TrafficMonitor(private var context: Context, private var appDataList : ArrayList<Data>, private var whiteList : ArrayList<String>){
+class TrafficMonitor(private var context: Context,
+                     private var appDataList: ArrayList<Data>,
+                     private var whiteList: ArrayList<String>,
+                     private var list: MutableList<ApplicationInfo>,
+                     private  var appHistory : HashMap<Int, Long>){
 
+    private val period : Int = 20000
+
+    @RequiresApi(Build.VERSION_CODES.N)
     fun getTxBytesForAllApp() {
-        // 설치되어 있는 어플리케이션의 패키지명 가져오기
-        val packageManager = context.packageManager
-        val list = packageManager.getInstalledApplications(0)
-
         // networkStatsManager 생성
         val networkStatsManager =
             context.getSystemService(Context.NETWORK_STATS_SERVICE) as NetworkStatsManager
 
         // 어댑터에 이미 들어있는 어플리케이션의 데이터를 따로 저장 --> 어댑터에 중복으로 들어가지 않게 하기 위함
-        val packageNameList : HashMap<String, Data> = HashMap()
-        for (app in appDataList){
-            packageNameList.put(app.getPackageName(), app)
+        val packageNameList : HashMap<Int, Data> = HashMap()
+        for (app in list){
+            // 앱 이름 얻어오기
+            val label = context.packageManager.getApplicationLabel(app)
+
+            // 히스토리에 없다면 송신 데이터 양은 0으로 세팅하여 추가
+            if(appHistory.get(app.uid) == null){
+                packageNameList.put(app.uid, Data(label.toString() + " " + app.packageName, app.uid, 0L))
+            }
+            // 히스토리에 있다면 송신 데이터 양은 히스토리에서 얻어와서 추가
+            else{
+                packageNameList.put(app.uid, Data(label.toString() + " " + app.packageName, app.uid, appHistory.get(app.uid)!!))
+            }
         }
 
-        // 설치되어 있는 앱 별 총 송신 트래픽 계산
-        for (app in list) {
-            // 각 앱의 uid
-            val uid = app.uid
+        // NetworkStats 리턴
+        val networkStats = networkStatsManager.querySummary(
+            NetworkCapabilities.TRANSPORT_WIFI,
+            "",
+            System.currentTimeMillis() - period,
+            System.currentTimeMillis(),
+        )
 
-            // uid 를 통해 NetworkStats 리턴
-            val networkStats = networkStatsManager.queryDetailsForUid(
-                NetworkCapabilities.TRANSPORT_WIFI,
-                "",
-                0,
-                System.currentTimeMillis(),
-                uid
-            )
-            // uid 인 앱의 총 송신 트래픽 계산
-            var txBytes: Long = 0
-            do {
-                val bucket = NetworkStats.Bucket()
-                networkStats.getNextBucket(bucket)
-                txBytes += bucket.txBytes
-            } while (networkStats.hasNextBucket())
+        //앱의 총 송신 트래픽 계산
+        var txBytes: Long = 0
+        val bucket = NetworkStats.Bucket()
 
-            // 원래 어댑터에 없던 것이라면 추가
-            if(packageNameList.get(app.packageName) == null){
-                // appDataList 에 (패키지명, 총 송신 트래픽) 추가
-                appDataList.add(Data(app.packageName, txBytes))
-            }
-            // 원래 어댑터에 있던 것이라면 txBytes 만 수정
-            else{
-                val data = packageNameList.get(app.packageName)
-                val index = appDataList.indexOf(data)
-                appDataList[index].setTxBytes(txBytes)
-            }
+        do {
+            val uid = bucket.uid    // 앱 uid 반환
 
-            networkStats.close()
+            networkStats.getNextBucket(bucket)
+            txBytes = bucket.txBytes   // 앱 별 송신 트래픽
 
-            // com.google.* or com.samsung.* 으로 시작하는 패키지명은  whiteList 에 등록
-            if(app.packageName.startsWith("com.google.") || app.packageName.startsWith("com.samsung.")){
-//                whiteList.add(app.packageName)
-                // 이미 화이트리스트에 등록되어 있지 않다면 추가
-                if(!whiteList.contains(app.packageName)){
-                    whiteList.add(app.packageName)
+            val data = packageNameList.get(uid) // uid를 사용하여 (앱이름 + 패키지명, uid, 송신 트래픽 양) 반환
+
+            // 데이터가 null 이 아니고 화이트리스트에 들어가 있지 않다면 송신 트래픽 측정
+            if(data != null && !whiteList.contains(data.getPackageName())) {
+                Log.e("UID", uid.toString())
+                Log.e("txBytes", bucket.txBytes.toString())
+
+                val bytes = data?.getTxBytes()
+                val diff = txBytes - bytes!!    // 현재 계산한 txBytes - 이전에 계산한 txBytes
+
+                // 차이가 0이 아니면 송신 기록이 있다는 의미-> 사용자에게 보여줘야 함
+                if (diff != 0L) {
+                    if(appHistory.get(uid) == null){
+                        appHistory.put(uid, diff)
+                    }
+                    else{
+                        appHistory.replace(uid, diff)
+                    }
+                    data.setTxBytes(diff)
+
+                    // 가장 앞에 새로운 데이터 추가
+                    appDataList.add(0, data)
                 }
             }
-        }
+        } while (networkStats.hasNextBucket())
+
+
+
+        networkStats.close()
     }
 }
