@@ -9,6 +9,7 @@ import android.net.NetworkCapabilities
 import android.net.TrafficStats
 import android.os.Bundle
 import android.provider.Settings
+import android.telephony.TelephonyManager
 import android.util.Log
 import android.view.View
 import android.widget.Button
@@ -24,12 +25,14 @@ import kotlin.collections.HashMap
 
 class MainActivity : AppCompatActivity() {
     private val appDataList = ArrayList<Data>()     // 어댑터에 추가할 앱 리스트 (패키지명, 총 송신 트래픽)으로 구성
+    private val appHistory = HashMap<Int, Long>()      // 앱의 이전 송신 트래픽 양 저장
     private val whiteList = ArrayList<String>()     // 화이트 리스트 (ex. com.samsung.*, com.google.*)
-    private val appData = HashMap<Int, Int>()       // 앱별 송신 트래픽 변화량 체크를 위한 자료구조
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+        Log.e("MobileTraffic uid", android.os.Process.myUid().toString())
 
         // permission 이 없다면 요청
         if(!checkPermission()){
@@ -40,27 +43,42 @@ class MainActivity : AppCompatActivity() {
             val recyclerView = findViewById<RecyclerView>(R.id.recyclerView)
             initView(recyclerView)
 
-            val trafficMonitor = TrafficMonitor(this, appDataList, whiteList)
+            // 설치되어 있는 어플리케이션의 패키지명 가져오기
+            val list = this.packageManager.getInstalledApplications(0)
 
+
+            // 화이트 리스트에 추가
+            for (app in list){
+                // com.google.* or com.samsung.* 으로 시작하는 패키지명은  whiteList 에 등록
+                if(app.packageName.startsWith("com.google.") || app.packageName.startsWith("com.samsung.")){
+//                whiteList.add(app.packageName)
+                    // 이미 화이트리스트에 등록되어 있지 않다면 추가
+                    if(!whiteList.contains(app.packageName)){
+                        whiteList.add(app.packageName)
+                    }
+                }
+            }
+
+            // TrafficMonitor 생성
+            val trafficMonitor = TrafficMonitor(this, appDataList, whiteList, list, appHistory)
+
+            // delay 만큼 주기적으로 트래픽 양 계산
             var timer = Timer()
             timer.schedule(object : TimerTask(){
                 override fun run(){
                     try{
-                        var start = System.currentTimeMillis()
+                        val startTime = System.currentTimeMillis()
                         trafficMonitor.getTxBytesForAllApp()
-                        var end = System.currentTimeMillis()
-                        Log.d("elapse time", (end-start).toString())
+                        val endTime = System.currentTimeMillis()
+                        Log.e("Elapse Time", (endTime - startTime).toString())
                     }catch(e : Exception){
                         Log.e("MainActivity", e.toString())
                     }
 
+                    // 리사이클러뷰 어댑터 내용 수정 알림
                     runOnUiThread{
                         recyclerView.adapter?.notifyDataSetChanged()
                     }
-
-                    Log.d("whiteList size : ", whiteList.size.toString())
-                    Log.d("appDataList size : ", appDataList.size.toString())
-
                 }
             }, 0, 20000) // delay는 task가 처음 실행될 때 영향, period는 task가 실행될 때마다 영향
         }
@@ -88,7 +106,7 @@ class MainActivity : AppCompatActivity() {
         override fun run(){
             try {
                 // 소켓 연결
-                val socket = Socket("172.30.1.6", 5000)
+                val socket = Socket("192.168.0.160", 5000)
                 val outStream = socket.getOutputStream()
                 val data : Int = 3
                 
@@ -98,12 +116,12 @@ class MainActivity : AppCompatActivity() {
             } catch (e: Exception) {
                 e.printStackTrace()
             }
-            // 송신이 끝나면 어댑터 내용 변경 후 어댑터에게 알림 -> 화면에 뜨는 데이터 변경
-            runOnUiThread{
-                val transmitByteByMobile = TrafficStats.getUidTxBytes(android.os.Process.myUid())
-                appDataList[0].setTxBytes(transmitByteByMobile)
-                appAdapter.notifyDataSetChanged()
-            }
+//            // 송신이 끝나면 어댑터 내용 변경 후 어댑터에게 알림 -> 화면에 뜨는 데이터 변경
+//            runOnUiThread{
+//                val transmitByteByMobile = TrafficStats.getUidTxBytes(android.os.Process.myUid())
+//                appDataList[0].setTxBytes(transmitByteByMobile)
+//                appAdapter.notifyDataSetChanged()
+//            }
         }
     }
 
