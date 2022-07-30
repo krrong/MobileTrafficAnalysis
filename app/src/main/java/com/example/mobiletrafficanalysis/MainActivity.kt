@@ -15,6 +15,7 @@ import android.view.View
 import android.widget.Button
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import java.net.Socket
@@ -54,7 +55,7 @@ class MainActivity : AppCompatActivity() {
 //                whiteList.add(app.packageName)
                     // 이미 화이트리스트에 등록되어 있지 않다면 추가
                     if(!whiteList.contains(app.packageName)){
-                        whiteList.add(app.packageName)
+                        whiteList.add(this.packageManager.getApplicationLabel(app).toString() + "(" + app.packageName + ")")
                     }
                 }
             }
@@ -80,16 +81,18 @@ class MainActivity : AppCompatActivity() {
                         recyclerView.adapter?.notifyDataSetChanged()
                     }
                 }
-            }, 0, 20000) // delay는 task가 처음 실행될 때 영향, period는 task가 실행될 때마다 영향
+            }, 0, 10000) // delay는 task가 처음 실행될 때 영향, period는 task가 실행될 때마다 영향
         }
     }
 
     private fun initView(recyclerView : RecyclerView) {
         val layoutManager = LinearLayoutManager(this)
         val appAdapter = AppAdapter(this, appDataList)
+        val dividerItemDecoration = DividerItemDecoration(recyclerView.context, layoutManager.orientation)
 
         recyclerView.adapter = appAdapter
         recyclerView.layoutManager = layoutManager
+        recyclerView.addItemDecoration(dividerItemDecoration)
         recyclerView.setHasFixedSize(true)
 
         val button = findViewById<Button>(R.id.button)
@@ -106,7 +109,7 @@ class MainActivity : AppCompatActivity() {
         override fun run(){
             try {
                 // 소켓 연결
-                val socket = Socket("192.168.0.160", 5000)
+                val socket = Socket("172.20.10.2", 5000)
                 val outStream = socket.getOutputStream()
                 val data : Int = 3
                 
