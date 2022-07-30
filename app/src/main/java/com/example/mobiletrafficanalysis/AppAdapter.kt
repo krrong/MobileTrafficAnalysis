@@ -24,13 +24,15 @@ class AppAdapter(private val context : Context, val appList : ArrayList<Data>) :
 
     inner class ViewHolder(view : View) : RecyclerView.ViewHolder(view){
         private val appName = itemView.findViewById<TextView>(R.id.packageName)
+        private val occurTime = itemView.findViewById<TextView>(R.id.detectTime)
         private val txBytes = itemView.findViewById<TextView>(R.id.txBytes)
         private val uid = itemView.findViewById<TextView>(R.id.uid)
 
         fun bind(item: Data){
-            appName?.text = item.getPackageName()
-            txBytes?.text = item.getTxBytes().toString()
-            uid?.text = item.getUid().toString()
+            appName?.text = "Name : " + item.getPackageName()
+            occurTime?.text = "Detect Time : " + item.getDetectTime()
+            txBytes?.text = "Transmit Bytes : " + item.getTxBytes().toString() + "bytes"
+            uid?.text = "UID : " + item.getUid().toString()
         }
     }
 }
