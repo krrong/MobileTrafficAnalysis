@@ -5,6 +5,7 @@ import android.app.usage.NetworkStats
 import android.app.usage.NetworkStatsManager
 import android.content.Context
 import android.content.Intent
+import android.content.pm.ApplicationInfo
 import android.net.NetworkCapabilities
 import android.net.TrafficStats
 import android.os.Bundle
@@ -25,9 +26,10 @@ import kotlin.collections.HashMap
 
 
 class MainActivity : AppCompatActivity() {
-    private val appDataList = ArrayList<Data>()     // 어댑터에 추가할 앱 리스트 (패키지명, 총 송신 트래픽)으로 구성
-    private val appHistory = HashMap<Int, Long>()      // 앱의 이전 송신 트래픽 양 저장
-    private val whiteList = ArrayList<String>()     // 화이트 리스트 (ex. com.samsung.*, com.google.*)
+    private var appDataList = ArrayList<Data>()         // 어댑터에 추가할 앱 리스트 (패키지명, 총 송신 트래픽)으로 구성
+    private var appHistory = HashMap<Int, Long>()       // 앱의 이전 송신 트래픽 양 저장
+    private var whiteList = ArrayList<String>()         // 화이트 리스트 (ex. com.samsung.*, com.google.*)
+    private var list = mutableListOf<ApplicationInfo>() // 설치된 어플리케이션의 정보를 저장하는 리스트
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -44,21 +46,7 @@ class MainActivity : AppCompatActivity() {
             val recyclerView = findViewById<RecyclerView>(R.id.recyclerView)
             initView(recyclerView)
 
-            // 설치되어 있는 어플리케이션의 패키지명 가져오기
-            val list = this.packageManager.getInstalledApplications(0)
-
-
-            // 화이트 리스트에 추가
-            for (app in list){
-                // com.google.* or com.samsung.* 으로 시작하는 패키지명은  whiteList 에 등록
-                if(app.packageName.startsWith("com.google.") || app.packageName.startsWith("com.samsung.")){
-//                whiteList.add(app.packageName)
-                    // 이미 화이트리스트에 등록되어 있지 않다면 추가
-                    if(!whiteList.contains(app.packageName)){
-                        whiteList.add(this.packageManager.getApplicationLabel(app).toString() + "(" + app.packageName + ")")
-                    }
-                }
-            }
+            makeWhiteList()
 
             // TrafficMonitor 생성
             val trafficMonitor = TrafficMonitor(this, appDataList, whiteList, list, appHistory)
@@ -174,5 +162,25 @@ class MainActivity : AppCompatActivity() {
         // 다이얼로그 보여주기
         val alertDialog = builder.create()
         alertDialog.show()
+    }
+
+    /**
+     * com.google.* or com.samsung.* 으로 시작하는 패키지명은 whiteList 에 등록
+     */
+    private fun makeWhiteList(){
+        // 설치되어 있는 어플리케이션의 패키지명 가져오기
+        list = this.packageManager.getInstalledApplications(0)
+
+        // 화이트 리스트에 추가
+        for (app in list){
+            // com.google.* or com.samsung.* 으로 시작하는 패키지명은 whiteList 에 등록
+            if(app.packageName.startsWith("com.google.") || app.packageName.startsWith("com.samsung.")){
+//                whiteList.add(app.packageName)
+                // 이미 화이트리스트에 등록되어 있지 않다면 추가
+                if(!whiteList.contains(app.packageName)){
+                    whiteList.add(this.packageManager.getApplicationLabel(app).toString() + "(" + app.packageName + ")")
+                }
+            }
+        }
     }
 }
