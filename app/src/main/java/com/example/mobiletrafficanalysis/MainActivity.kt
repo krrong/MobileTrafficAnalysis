@@ -1,5 +1,6 @@
 package com.example.mobiletrafficanalysis
 
+import android.annotation.SuppressLint
 import android.app.AppOpsManager
 import android.app.usage.NetworkStats
 import android.app.usage.NetworkStatsManager
@@ -12,6 +13,7 @@ import android.os.Bundle
 import android.provider.Settings
 import android.telephony.TelephonyManager
 import android.util.Log
+import android.view.MotionEvent
 import android.view.View
 import android.widget.Button
 import androidx.appcompat.app.AlertDialog
@@ -30,6 +32,8 @@ class MainActivity : AppCompatActivity() {
     private var appHistory = HashMap<Int, Long>()       // 앱의 이전 송신 트래픽 양 저장
     private var whiteList = ArrayList<String>()         // 화이트 리스트 (ex. com.samsung.*, com.google.*)
     private var list = mutableListOf<ApplicationInfo>() // 설치된 어플리케이션의 정보를 저장하는 리스트
+    private var recyclerView : RecyclerView? = null     // 리사이클러뷰
+    private var isMonitoring = 0                      // 모니터링이 진행 중인지 나타내는 플래그
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -41,53 +45,66 @@ class MainActivity : AppCompatActivity() {
         if(!checkPermission()){
             requestPermission()
         }
-        // permission 이 있다면 앱 별 송신 트래픽 계산 후 뷰 로드
+        // permission 이 있다면 뷰 로드 후 앱별 송신 트래픽 계산
         else{
-            val recyclerView = findViewById<RecyclerView>(R.id.recyclerView)
-            initView(recyclerView)
-
+            initView()
             makeWhiteList()
 
-            // TrafficMonitor 생성
-            val trafficMonitor = TrafficMonitor(this, appDataList, whiteList, list, appHistory)
+            val trafficMonitor = TrafficMonitor(this, appDataList, whiteList, list, appHistory) // TrafficMonitor 생성
 
-            // delay 만큼 주기적으로 트래픽 양 계산
-            var timer = Timer()
-            timer.schedule(object : TimerTask(){
-                override fun run(){
-                    try{
-                        val startTime = System.currentTimeMillis()
-                        trafficMonitor.getTxBytesForAllApp()
-                        val endTime = System.currentTimeMillis()
-                        Log.e("Elapse Time", (endTime - startTime).toString())
-                    }catch(e : Exception){
-                        Log.e("MainActivity", e.toString())
-                    }
-
-                    // 리사이클러뷰 어댑터 내용 수정 알림
-                    runOnUiThread{
-                        recyclerView.adapter?.notifyDataSetChanged()
-                    }
+            val button = findViewById<Button>(R.id.button)
+            button.setOnClickListener(View.OnClickListener {
+                // 모니터링이 진행중이지 않다면 실행
+                if(isMonitoring == 0){
+                    isMonitoring = 1
+                    trafficMonitor.startMonitoring()    // 모니터링 스타트 -> 10초 주기로 실행
+                    button.text = "ON"
                 }
-            }, 0, 10000) // delay는 task가 처음 실행될 때 영향, period는 task가 실행될 때마다 영향
+                // 모니터링이 진행중이면 종료
+                else{
+                    isMonitoring = 0
+                    trafficMonitor.stopMonitoring()
+                    button.text = "OFF"
+                }
+            })
         }
     }
 
-    private fun initView(recyclerView : RecyclerView) {
+    @SuppressLint("ClickableViewAccessibility")
+    private fun initView() {
+        recyclerView = findViewById<RecyclerView>(R.id.recyclerView)
         val layoutManager = LinearLayoutManager(this)
         val appAdapter = AppAdapter(this, appDataList)
-        val dividerItemDecoration = DividerItemDecoration(recyclerView.context, layoutManager.orientation)
+        val dividerItemDecoration = DividerItemDecoration(recyclerView?.context, layoutManager.orientation)
 
-        recyclerView.adapter = appAdapter
-        recyclerView.layoutManager = layoutManager
-        recyclerView.addItemDecoration(dividerItemDecoration)
-        recyclerView.setHasFixedSize(true)
+        recyclerView?.adapter = appAdapter
+        recyclerView?.layoutManager = layoutManager
+        recyclerView?.addItemDecoration(dividerItemDecoration)
+        recyclerView?.setHasFixedSize(true)
 
-        val button = findViewById<Button>(R.id.button)
-        button.setOnClickListener(View.OnClickListener {
-            val thread = NetworkThread(appAdapter)
-            thread.start()
-        })
+        recyclerView?.setOnTouchListener{_ : View, event:MotionEvent ->
+            when(event.action){
+                MotionEvent.ACTION_DOWN ->{
+                    Log.e("MAIN", "DOWN")
+                }
+            }
+            true
+        }
+
+//        val button = findViewById<Button>(R.id.button)
+//        button.setOnClickListener(View.OnClickListener {
+//            val trafficMonitor = TrafficMonitor(this, appDataList, whiteList, list, appHistory) // TrafficMonitor 생성
+//            if(monitoringFlag == 0){
+//                monitoringFlag = 1
+//                trafficMonitor.startMonitoring()    // 모니터링 스타트 -> 20초 주기로 실행
+//                button.text = "ON"
+//            }
+//            else{
+//                monitoringFlag = 0
+//                trafficMonitor.stopMonitoring()
+//                button.text = "OFF"
+//            }
+//        })
     }
 
     /**
