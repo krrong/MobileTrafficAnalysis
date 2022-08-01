@@ -1,22 +1,41 @@
 package com.example.mobiletrafficanalysis
 
+import android.app.Activity
 import android.app.usage.NetworkStats
 import android.app.usage.NetworkStatsManager
 import android.content.Context
 import android.content.pm.ApplicationInfo
 import android.net.NetworkCapabilities
 import android.util.Log
+import androidx.recyclerview.widget.RecyclerView
 import java.text.SimpleDateFormat
 import java.time.LocalDateTime
+import java.util.*
+import kotlin.collections.ArrayList
+import kotlin.collections.HashMap
+import kotlin.concurrent.timerTask
 
 
 class TrafficMonitor(private var context: Context,
-                     private var appDataList: ArrayList<Data>,
-                     private var whiteList: ArrayList<String>,
-                     private var list: MutableList<ApplicationInfo>,
-                     private  var appHistory : HashMap<Int, Long>){
+                              private var appDataList: ArrayList<Data>,
+                              private var whiteList: ArrayList<String>,
+                              private var list: MutableList<ApplicationInfo>,
+                              private  var appHistory : HashMap<Int, Long>){
 
-    private val period : Int = 10000
+    private val period : Long = 10000   // 송신 트래픽 계산 함수 재실행 시간
+    private var timer : Timer? = null   // 타이머 객체
+    private var timerTask : TimerTask? = null   // 타이머 태스크 객체 (실제로 하는 일)
+    private var recyclerView : RecyclerView? = null
+
+    // 생성자
+    init {
+        // 타이머 생성
+        timer = Timer()
+
+        // MainActivity의 리사이클러뷰를 받아옴
+        var activity = context as MainActivity
+        recyclerView = activity.findViewById<RecyclerView>(R.id.recyclerView)
+    }
 
     /**
      * 패키지 명이 화이트 리스트에 있는지 반환
@@ -32,6 +51,33 @@ class TrafficMonitor(private var context: Context,
         val dataFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
         val time = System.currentTimeMillis()
         return dataFormat.format(time)
+    }
+
+    /**
+     * 모니터링 시작 10초 주기로 트래픽 측정
+     */
+    fun startMonitoring(){
+        Log.e("TrafficMonitoring", "startMonitoring")
+        timerTask = object : TimerTask(){
+            override fun run() {
+                getTxBytesForAllApp()
+
+                var activity = context as MainActivity
+                activity.runOnUiThread{
+                    recyclerView?.adapter?.notifyDataSetChanged()
+                }
+            }
+        }
+
+        timer!!.schedule(timerTask, 0, period)
+    }
+
+    /**
+     * 모니터링 종료
+     */
+    fun stopMonitoring(){
+        Log.e("TrafficMonitoring", "stopMonitoring")
+        timerTask?.cancel()
     }
 
     /**
