@@ -18,7 +18,7 @@ import kotlin.concurrent.timerTask
 
 class TrafficMonitor(private var context: Context,
                               private var appDataList: ArrayList<Data>,
-                              private var whiteList: ArrayList<String>,
+                              private var whiteList: ArrayList<Int>,
                               private var list: MutableList<ApplicationInfo>,
                               private  var appHistory : HashMap<Int, Long>){
 
@@ -40,8 +40,8 @@ class TrafficMonitor(private var context: Context,
     /**
      * 패키지 명이 화이트 리스트에 있는지 반환
      */
-    fun isInWhiteList(packageName : String) : Boolean {
-        return whiteList.contains(packageName)
+    fun isInWhiteList(uid : Int) : Boolean {
+        return whiteList.contains(uid)
     }
 
     /**
@@ -133,7 +133,7 @@ class TrafficMonitor(private var context: Context,
             val data = packageNameList.get(uid) // uid를 사용하여 (앱이름 + 패키지명, uid, 송신 트래픽 양) 반환
 
             if(data != null){
-                if(!isInWhiteList(data.getPackageName())){
+                if(!isInWhiteList(data.getUid())){
                     Log.e("UID", uid.toString())
                     Log.e("txBytes", bucket.txBytes.toString())
 
