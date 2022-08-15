@@ -2,18 +2,12 @@ package com.example.mobiletrafficanalysis
 
 import android.annotation.SuppressLint
 import android.app.AppOpsManager
-import android.app.usage.NetworkStats
-import android.app.usage.NetworkStatsManager
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ApplicationInfo
-import android.net.NetworkCapabilities
-import android.net.TrafficStats
 import android.os.Bundle
 import android.provider.Settings
-import android.telephony.TelephonyManager
 import android.util.Log
-import android.view.MotionEvent
 import android.view.View
 import android.widget.Button
 import androidx.appcompat.app.AlertDialog
@@ -22,7 +16,6 @@ import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import java.net.Socket
-import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 
@@ -30,10 +23,12 @@ import kotlin.collections.HashMap
 class MainActivity : AppCompatActivity() {
     private var appDataList = ArrayList<Data>()         // 어댑터에 추가할 앱 리스트 (패키지명, 총 송신 트래픽)으로 구성
     private var appHistory = HashMap<Int, Long>()       // 앱의 이전 송신 트래픽 양 저장
-    private var whiteList = ArrayList<String>()         // 화이트 리스트 (ex. com.samsung.*, com.google.*)
+    private var whiteList = ArrayList<Int>()            // 화이트 리스트 (ex. com.samsung.*, com.google.*)
     private var list = mutableListOf<ApplicationInfo>() // 설치된 어플리케이션의 정보를 저장하는 리스트
     private var recyclerView : RecyclerView? = null     // 리사이클러뷰
-    private var isMonitoring = 0                      // 모니터링이 진행 중인지 나타내는 플래그
+    private var isMonitoring = 0                        // 모니터링이 진행 중인지 나타내는 플래그
+    private var dangerDivider : DangerDivider? = null
+    private var detectService : DetectService? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -48,23 +43,28 @@ class MainActivity : AppCompatActivity() {
         // permission 이 있다면 뷰 로드 후 앱별 송신 트래픽 계산
         else{
             initView()
+            
+            // list, whiteList 초기화
             makeWhiteList()
+            
+//            // 서비스 생성 및 시작
+//            serviceStart()
 
             val trafficMonitor = TrafficMonitor(this, appDataList, whiteList, list, appHistory) // TrafficMonitor 생성
 
-            val button = findViewById<Button>(R.id.button)
-            button.setOnClickListener(View.OnClickListener {
+            val operationBtn = findViewById<Button>(R.id.operationBtn)
+            operationBtn.setOnClickListener(View.OnClickListener {
                 // 모니터링이 진행중이지 않다면 실행
                 if(isMonitoring == 0){
                     isMonitoring = 1
                     trafficMonitor.startMonitoring()    // 모니터링 스타트 -> 10초 주기로 실행
-                    button.text = "ON"
+                    operationBtn.text = "ON"
                 }
                 // 모니터링이 진행중이면 종료
                 else{
                     isMonitoring = 0
                     trafficMonitor.stopMonitoring()
-                    button.text = "OFF"
+                    operationBtn.text = "OFF"
                 }
             })
         }
@@ -82,29 +82,14 @@ class MainActivity : AppCompatActivity() {
         recyclerView?.addItemDecoration(dividerItemDecoration)
         recyclerView?.setHasFixedSize(true)
 
-        recyclerView?.setOnTouchListener{_ : View, event:MotionEvent ->
-            when(event.action){
-                MotionEvent.ACTION_DOWN ->{
-                    Log.e("MAIN", "DOWN")
-                }
-            }
-            true
-        }
+        val networkBtn = findViewById<Button>(R.id.networkBtn)
+        networkBtn.setOnClickListener(View.OnClickListener {
+            val networkThread = NetworkThread(appAdapter)
+            networkThread.start()
+        })
 
-//        val button = findViewById<Button>(R.id.button)
-//        button.setOnClickListener(View.OnClickListener {
-//            val trafficMonitor = TrafficMonitor(this, appDataList, whiteList, list, appHistory) // TrafficMonitor 생성
-//            if(monitoringFlag == 0){
-//                monitoringFlag = 1
-//                trafficMonitor.startMonitoring()    // 모니터링 스타트 -> 20초 주기로 실행
-//                button.text = "ON"
-//            }
-//            else{
-//                monitoringFlag = 0
-//                trafficMonitor.stopMonitoring()
-//                button.text = "OFF"
-//            }
-//        })
+//        dangerDivider = DangerDivider(this, whiteList)
+//        dangerDivider?.getForegroundApp()
     }
 
     /**
@@ -183,6 +168,7 @@ class MainActivity : AppCompatActivity() {
 
     /**
      * com.google.* or com.samsung.* 으로 시작하는 패키지명은 whiteList 에 등록
+     * list, whiteList 초기화
      */
     private fun makeWhiteList(){
         // 설치되어 있는 어플리케이션의 패키지명 가져오기
@@ -194,10 +180,31 @@ class MainActivity : AppCompatActivity() {
             if(app.packageName.startsWith("com.google.") || app.packageName.startsWith("com.samsung.")){
 //                whiteList.add(app.packageName)
                 // 이미 화이트리스트에 등록되어 있지 않다면 추가
-                if(!whiteList.contains(app.packageName)){
-                    whiteList.add(this.packageManager.getApplicationLabel(app).toString() + "(" + app.packageName + ")")
+                if(!whiteList.contains(app.uid)){
+                    whiteList.add(app.uid)
                 }
+//                if(!whiteList.contains(app.packageName)){
+//                    whiteList.add(this.packageManager.getApplicationLabel(app).toString() + "(" + app.packageName + ")")
+//                }
             }
         }
+    }
+
+    /**
+     * intent를 통해 필요한 정보 전달 이후 service 시작
+     *
+     */
+    fun serviceStart(){
+        val intent = Intent(this, DetectService::class.java)
+        intent.putExtra("whiteList", whiteList)
+        startService(intent)
+    }
+
+    /**
+     * service 종료
+     */
+    fun serviceStop(){
+        val intent = Intent(this, DetectService::class.java)
+        stopService(intent)
     }
 }
