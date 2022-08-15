@@ -5,6 +5,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 
 class AppAdapter(private val context : Context, val appList : ArrayList<Data>) : RecyclerView.Adapter<AppAdapter.ViewHolder>() {
@@ -33,6 +34,39 @@ class AppAdapter(private val context : Context, val appList : ArrayList<Data>) :
             occurTime?.text = "Detect Time : " + item.getDetectTime()
             txBytes?.text = "Transmit Bytes : " + item.getTxBytes().toString() + "bytes"
             uid?.text = "UID : " + item.getUid().toString()
+
+            setTextColor(item.getRiskLevel())
+        }
+
+        // 위험도에 따른 색상 변경
+        fun setTextColor(dangerLevel : Int){
+            when(dangerLevel){
+                0 -> {
+                    appName.setTextColor(ContextCompat.getColor(context, R.color.risk0))
+                    occurTime.setTextColor(ContextCompat.getColor(context, R.color.risk0))
+                    txBytes.setTextColor(ContextCompat.getColor(context, R.color.risk0))
+                    uid.setTextColor(ContextCompat.getColor(context, R.color.risk0))
+                }
+                1 -> {
+                    appName.setTextColor(ContextCompat.getColor(context, R.color.risk1))
+                    occurTime.setTextColor(ContextCompat.getColor(context, R.color.risk1))
+                    txBytes.setTextColor(ContextCompat.getColor(context, R.color.risk1))
+                    uid.setTextColor(ContextCompat.getColor(context, R.color.risk1))
+                }
+                2 -> {
+                    appName.setTextColor(ContextCompat.getColor(context, R.color.risk2))
+                    occurTime.setTextColor(ContextCompat.getColor(context, R.color.risk2))
+                    txBytes.setTextColor(ContextCompat.getColor(context, R.color.risk2))
+                    uid.setTextColor(ContextCompat.getColor(context, R.color.risk2))
+                }
+                3 -> {
+                    appName.setTextColor(ContextCompat.getColor(context, R.color.risk3))
+                    occurTime.setTextColor(ContextCompat.getColor(context, R.color.risk3))
+                    txBytes.setTextColor(ContextCompat.getColor(context, R.color.risk3))
+                    uid.setTextColor(ContextCompat.getColor(context, R.color.risk3))
+                }
+            }
+
         }
     }
 }
