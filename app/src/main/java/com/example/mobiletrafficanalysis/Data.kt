@@ -5,12 +5,14 @@ public class Data {
     private var detectTime : String = ""
     private var uid : Int = 0
     private var txBytes : Long = 0
+    private var riskLevel : Int = -1
 
-    constructor(packageName:String, detectTime:String, uid : Int, txBytes:Long){
+    constructor(packageName:String, detectTime:String, uid : Int, txBytes:Long, riskLevel:Int){
         this.packageName = packageName
         this.detectTime = detectTime
         this.uid = uid
         this.txBytes = txBytes
+        this.riskLevel = riskLevel
     }
 
     fun getPackageName(): String {
@@ -29,6 +31,10 @@ public class Data {
         return this.uid
     }
 
+    fun getRiskLevel():Int{
+        return this.riskLevel
+    }
+
     fun setPackageName(packageName:String) {
         this.packageName = packageName
     }
@@ -43,5 +49,9 @@ public class Data {
 
     fun setUid(uid:Int) {
         this.uid = uid
+    }
+
+    fun setRiskLevel(riskLevel: Int){
+        this.riskLevel = riskLevel
     }
 }
