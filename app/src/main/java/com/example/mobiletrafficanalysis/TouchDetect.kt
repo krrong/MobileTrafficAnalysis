@@ -75,7 +75,7 @@ class TouchDetect(context : Context,
     /**
      * 위험도 구분 (0, 1, 2, 3)
      */
-    fun divideDangerLevel(uid : Int, appName: String) : Int {
+    fun measureRisk(uid : Int, appName: String) : Int {
         // 화이트리스트에 포함되어 있으면 0
         if(inWhiteList(uid)){
             return 0
@@ -95,7 +95,6 @@ class TouchDetect(context : Context,
                 return 3
             }
         }
-        return -1
     }
 
     /**
@@ -125,6 +124,12 @@ class TouchDetect(context : Context,
     fun isTouchEvent(appName : String): Boolean {
         var occurTime = lastTouch.get(appName)  // 마지막 터치 이벤트 발생 시각
 
+        // 터치 이벤트가 없었으면 false 반환
+        if(occurTime == null){
+            return false
+        }
+
+        // 마지막 터치 이벤트 발생 시각이 10초 이내면 true 반환
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 return ChronoUnit.SECONDS.between(LocalDateTime.now(), occurTime) < 10
             } else {
