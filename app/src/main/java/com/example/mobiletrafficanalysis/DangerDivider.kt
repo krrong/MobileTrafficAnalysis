@@ -17,7 +17,7 @@ import kotlin.collections.HashMap
 class DangerDivider(var context : Context,
                     var whiteList: ArrayList<Int>){
     /**
-     * 위험도 구분 함수 (0, 1, 2, 3)
+     * 위험도 구분 (0, 1, 2, 3)
      */
     fun divideDangerLevel(uid : Int) : Int {
         // 화이트리스트에 포함되어 있으면 0
@@ -43,7 +43,7 @@ class DangerDivider(var context : Context,
     }
 
     /**
-     * 패키지명이 화이트리스트에 있는지 반환
+     * uid가 화이트리스트에 있는지 반환
      */
     fun inWhiteList(uid : Int) : Boolean {
         // 화이트리스트에 패키지명이 포함되어 있으면 true 반환
@@ -67,6 +67,7 @@ class DangerDivider(var context : Context,
      */
     fun isTouchEvent(): Boolean {
         // 앱의 마지막 터치 이벤트 발생 시각이 현재 시각 10초 내에 있으면 true
+
         return true
     }
 
@@ -77,22 +78,26 @@ class DangerDivider(var context : Context,
         Log.d("DangerDivider", "getForegroundApp")
         val usm = context.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
         val curTime = System.currentTimeMillis()
+
+        // curTime - 1000*1000 ~ curTime 까지 사용한 어플리케이션 리스트
         val appList = usm.queryUsageStats(UsageStatsManager.INTERVAL_DAILY, curTime - 1000*1000, curTime)
-        var app = ""
+        var appName = ""    // 마지막 사용 앱 이름
 
         if(appList != null && appList.size > 0){
+            // 중복 삭제를 위한 map 에 추가
             var map = HashMap<Long, UsageStats>()
             for(usageStats in appList){
                 map.put(usageStats.lastTimeUsed, usageStats)
             }
+            // 정렬
             val sortedMap = map.toSortedMap()
 
             if(!sortedMap.isEmpty()){
-                app = sortedMap.get(sortedMap.lastKey())?.packageName!!
+                appName = sortedMap.get(sortedMap.lastKey())?.packageName!!
             }
         }
 
-        return app
+        return appName
     }
 
 }
