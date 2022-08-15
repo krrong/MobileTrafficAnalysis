@@ -1,6 +1,5 @@
 package com.example.mobiletrafficanalysis
 
-import android.app.Activity
 import android.app.usage.NetworkStats
 import android.app.usage.NetworkStatsManager
 import android.content.Context
@@ -9,11 +8,9 @@ import android.net.NetworkCapabilities
 import android.util.Log
 import androidx.recyclerview.widget.RecyclerView
 import java.text.SimpleDateFormat
-import java.time.LocalDateTime
 import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
-import kotlin.concurrent.timerTask
 
 
 class TrafficMonitor(private var context: Context,
@@ -26,6 +23,7 @@ class TrafficMonitor(private var context: Context,
     private var timer : Timer? = null   // 타이머 객체
     private var timerTask : TimerTask? = null   // 타이머 태스크 객체 (실제로 하는 일)
     private var recyclerView : RecyclerView? = null
+    private var touchDetect : TouchDetect? = null
 
     // 생성자
     init {
@@ -35,6 +33,8 @@ class TrafficMonitor(private var context: Context,
         // MainActivity의 리사이클러뷰를 받아옴
         var activity = context as MainActivity
         recyclerView = activity.findViewById<RecyclerView>(R.id.recyclerView)
+
+        touchDetect = TouchDetect(context, whiteList)
     }
 
     /**
@@ -88,8 +88,8 @@ class TrafficMonitor(private var context: Context,
         val networkStatsManager =
             context.getSystemService(Context.NETWORK_STATS_SERVICE) as NetworkStatsManager
 
-        // packageNameList 는 uid를 이용하여 Data 객체를 가져오는 용도로 사용
-        // measureTxBytes 는 같은 uid에서 발생한 txBytes를 계산하고 history와 비교하는 용도로 사용
+        // packageNameList는 uid를 이용하여 Data 객체를 가져오는 용도로 사용
+        // measureTxBytes는 같은 uid에서 발생한 txBytes를 계산하고 history와 비교하는 용도로 사용
         val packageNameList : HashMap<Int, Data> = HashMap()
         var measureTxBytes : HashMap<Int, Data> = HashMap()
 
@@ -97,16 +97,8 @@ class TrafficMonitor(private var context: Context,
             // 앱 이름 얻어오기
             val label = context.packageManager.getApplicationLabel(app)
 
-//            // 히스토리에 없다면 송신 데이터 양은 0으로 세팅하여 추가
-//            if(appHistory.get(app.uid) == null){
-//                packageNameList.put(app.uid, Data(label.toString() + "(" + app.packageName + ")", "", app.uid, 0L))
-//            }
-//            // 히스토리에 있다면 송신 데이터 양은 히스토리에서 얻어와서 추가
-//            else{
-//                packageNameList.put(app.uid, Data(label.toString() + "(" + app.packageName + ")", "", app.uid, appHistory.get(app.uid)!!))
-//            }
             // packageNameList 는 uid를 이용하여 Data 객체를 가져오는 용도로 사용
-            packageNameList.put(app.uid, Data(label.toString() + "(" + app.packageName + ")", "", app.uid, 0L))
+            packageNameList.put(app.uid, Data(label.toString() + "(" + app.packageName + ")", "", app.uid, 0L, -1))
         }
 
         // NetworkStats 리턴
@@ -133,7 +125,20 @@ class TrafficMonitor(private var context: Context,
             val data = packageNameList.get(uid) // uid를 사용하여 (앱이름 + 패키지명, uid, 송신 트래픽 양) 반환
 
             if(data != null){
-                if(!isInWhiteList(data.getUid())){
+                // TODO : 텍스트뷰의 색상을 변경할 수 있도록 dangerLevel 계산 필요
+                
+                // 패키지명
+                var fir = data?.getPackageName()
+                var sec = fir?.split("(")?.get(1)
+                var appName = sec?.split(")")?.get(0)
+
+                // 위험도 측정
+                val dangerLevel : Int? = touchDetect?.measureRisk(uid, appName!!)
+                if (dangerLevel != null) {
+                    packageNameList.get(uid)?.setRiskLevel(dangerLevel)
+                }
+
+//                if(!isInWhiteList(data.getUid())){
                     Log.e("UID", uid.toString())
                     Log.e("txBytes", bucket.txBytes.toString())
 
@@ -155,7 +160,7 @@ class TrafficMonitor(private var context: Context,
                             measureTxBytes.get(uid)?.setTxBytes(prevTxBytes + curTxBytes)
                         }
                     }
-                }
+//                }
             }
 
 //            // data 가 유효하다면
