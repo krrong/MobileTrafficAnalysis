@@ -26,10 +26,10 @@ class TouchDetect(context : Context,
      * 패키지명, 마지막 터치 시간 추가
      */
     fun addEvent(){
-        var appName = getForegroundApp()    // 포그라운드 앱
+        val appName = getForegroundApp()    // 포그라운드 앱
 
         // 현재 시간
-        var curTime =
+        val curTime =
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 LocalDateTime.now()
             }
@@ -57,7 +57,7 @@ class TouchDetect(context : Context,
 
         if(appList != null && appList.size > 0){
             // 중복 삭제를 위한 map 에 추가
-            var map = HashMap<Long, UsageStats>()
+            val map = HashMap<Long, UsageStats>()
             for(usageStats in appList){
                 map.put(usageStats.lastTimeUsed, usageStats)
             }
@@ -112,8 +112,8 @@ class TouchDetect(context : Context,
      * 화면이 켜져있는지 반환
      */
     fun isScreenOn() : Boolean {
-        var powerManager = context?.getSystemService(Context.POWER_SERVICE) as PowerManager
-        Log.d("TouchDetect", powerManager.isInteractive.toString())
+        val powerManager = context?.getSystemService(Context.POWER_SERVICE) as PowerManager
+        Log.d("TouchDetect", "is screen on " + powerManager.isInteractive.toString())
         return powerManager.isInteractive
     }
 
@@ -122,7 +122,7 @@ class TouchDetect(context : Context,
      */
     // 앱의 마지막 터치 이벤트 발생 시각이 현재 시각 10초 내에 있으면 true
     fun isTouchEvent(appName : String): Boolean {
-        var occurTime = lastTouch.get(appName)  // 마지막 터치 이벤트 발생 시각
+        val occurTime = lastTouch.get(appName)  // 마지막 터치 이벤트 발생 시각
 
         // 터치 이벤트가 없었으면 false 반환
         if(occurTime == null){
