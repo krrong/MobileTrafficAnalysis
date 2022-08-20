@@ -63,10 +63,10 @@ class AppAdapter(val appList : ArrayList<Data>) : RecyclerView.Adapter<AppAdapte
                     uid.setTextColor(Color.parseColor("#FFFF8040"))
                 }
                 3 -> {
-                    appName.setTextColor(Color.parseColor("#FF00"))
-                    occurTime.setTextColor(Color.parseColor("#FF00"))
-                    txBytes.setTextColor(Color.parseColor("#FF00"))
-                    uid.setTextColor(Color.parseColor("#FF00"))
+                    appName.setTextColor(Color.parseColor("#FFFF0000"))
+                    occurTime.setTextColor(Color.parseColor("#FFFF0000"))
+                    txBytes.setTextColor(Color.parseColor("#FFFF0000"))
+                    uid.setTextColor(Color.parseColor("#FFFF0000"))
                 }
             }
 
