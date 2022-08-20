@@ -1,10 +1,13 @@
 package com.example.mobiletrafficanalysis
 
 import android.annotation.SuppressLint
+import android.app.Activity
 import android.app.AppOpsManager
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ApplicationInfo
+import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import android.util.Log
@@ -16,11 +19,21 @@ import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import java.net.Socket
-import kotlin.collections.ArrayList
-import kotlin.collections.HashMap
 
 
 class MainActivity : AppCompatActivity() {
+    init {
+        instance = this
+    }
+
+    companion object{
+        var instance : MainActivity? = null
+
+        fun getActivity():Activity{
+            return instance!!
+        }
+    }
+
     private var appDataList = ArrayList<Data>()         // 어댑터에 추가할 앱 리스트 (패키지명, 총 송신 트래픽)으로 구성
     private var appHistory = HashMap<Int, Long>()       // 앱의 이전 송신 트래픽 양 저장
     private var whiteList = ArrayList<Int>()            // 화이트 리스트 (ex. com.samsung.*, com.google.*)
@@ -39,31 +52,35 @@ class MainActivity : AppCompatActivity() {
         // permission 이 없다면 요청
         if(!checkPermission()){
             requestPermission()
+
+            checkPermission2()
         }
         // permission 이 있다면 뷰 로드 후 앱별 송신 트래픽 계산
         else{
+            // 퍼미션이 없으면 요청
+            checkPermission2()
+
             initView()
             
             // list, whiteList 초기화
             makeWhiteList()
             
-//            // 서비스 생성 및 시작
-//            serviceStart()
-
-            val trafficMonitor = TrafficMonitor(this, appDataList, whiteList, list, appHistory) // TrafficMonitor 생성
+//            val trafficMonitor = TrafficMonitor(this, appDataList, whiteList, list, appHistory) // TrafficMonitor 생성
 
             val operationBtn = findViewById<Button>(R.id.operationBtn)
             operationBtn.setOnClickListener(View.OnClickListener {
                 // 모니터링이 진행중이지 않다면 실행
                 if(isMonitoring == 0){
                     isMonitoring = 1
-                    trafficMonitor.startMonitoring()    // 모니터링 스타트 -> 10초 주기로 실행
+//                    trafficMonitor.startMonitoring()
+                    startDetectService()
                     operationBtn.text = "ON"
                 }
                 // 모니터링이 진행중이면 종료
                 else{
                     isMonitoring = 0
-                    trafficMonitor.stopMonitoring()
+//                    trafficMonitor.stopMonitoring()
+                    serviceStop()
                     operationBtn.text = "OFF"
                 }
             })
@@ -72,19 +89,20 @@ class MainActivity : AppCompatActivity() {
 
     @SuppressLint("ClickableViewAccessibility")
     private fun initView() {
-        recyclerView = findViewById<RecyclerView>(R.id.recyclerView)
-        val layoutManager = LinearLayoutManager(this)
-        val appAdapter = AppAdapter(this, appDataList)
-        val dividerItemDecoration = DividerItemDecoration(recyclerView?.context, layoutManager.orientation)
-
-        recyclerView?.adapter = appAdapter
-        recyclerView?.layoutManager = layoutManager
-        recyclerView?.addItemDecoration(dividerItemDecoration)
-        recyclerView?.setHasFixedSize(true)
+//        recyclerView = findViewById<RecyclerView>(R.id.recyclerView)
+//        val layoutManager = LinearLayoutManager(this)
+////        val appAdapter = AppAdapter(this, appDataList)
+//        val appAdapter = AppAdapter(appDataList)
+//        val dividerItemDecoration = DividerItemDecoration(recyclerView?.context, layoutManager.orientation)
+//
+//        recyclerView?.adapter = appAdapter
+//        recyclerView?.layoutManager = layoutManager
+//        recyclerView?.addItemDecoration(dividerItemDecoration)
+//        recyclerView?.setHasFixedSize(true)
 
         val networkBtn = findViewById<Button>(R.id.networkBtn)
         networkBtn.setOnClickListener(View.OnClickListener {
-            val networkThread = NetworkThread(appAdapter)
+            val networkThread = NetworkThread()
             networkThread.start()
         })
 
@@ -95,7 +113,7 @@ class MainActivity : AppCompatActivity() {
     /**
      * 서버로 값을 보내 송신 트래픽을 증가시키는 스레드
      */
-    inner class NetworkThread(val appAdapter: AppAdapter) : Thread(){
+    inner class NetworkThread() : Thread(){
         override fun run(){
             try {
                 // 소켓 연결
@@ -134,6 +152,44 @@ class MainActivity : AppCompatActivity() {
             mode = appOps.checkOpNoThrow(AppOpsManager.OPSTR_GET_USAGE_STATS, android.os.Process.myUid(), applicationContext.packageName )
         }
         return mode == AppOpsManager.MODE_ALLOWED
+    }
+
+    /**
+     * 다른 앱 위에 그리기 퍼미션 확인
+     */
+    private fun checkPermission2(){
+        // 마시멜로우 이상인 경우
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M){
+            // 다른 앱 위에 그리기 체크
+            if(!Settings.canDrawOverlays(this)){
+                val uri: Uri = Uri.fromParts("package", packageName, null)
+                val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, uri)
+                startActivity(intent)
+            }
+            else{
+//                startDetectService()
+            }
+        }
+        else{
+//            startDetectService()
+        }
+    }
+
+    /**
+     * 서비스 실행
+     */
+    private fun startDetectService(){
+        // 오레오 이상이면 startForegroundService 함수 사용
+        var intent : Intent = Intent(this, DetectService::class.java)
+        intent.putExtra("whiteList", whiteList)
+
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){
+            this.startForegroundService(intent)
+        }
+        // 오레오 이하이면 startService 함수 사용
+        else{
+            this.startService(intent)
+        }
     }
 
     /**
