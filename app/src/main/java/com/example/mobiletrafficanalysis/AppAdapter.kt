@@ -1,6 +1,8 @@
 package com.example.mobiletrafficanalysis
 
+import android.annotation.SuppressLint
 import android.content.Context
+import android.graphics.Color
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -8,9 +10,9 @@ import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 
-class AppAdapter(private val context : Context, val appList : ArrayList<Data>) : RecyclerView.Adapter<AppAdapter.ViewHolder>() {
+class AppAdapter(val appList : ArrayList<Data>) : RecyclerView.Adapter<AppAdapter.ViewHolder>() {
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-        val view = LayoutInflater.from(context).inflate(R.layout.app_list_activity, parent, false)
+        val view = LayoutInflater.from(parent.context).inflate(R.layout.app_list_activity, parent, false)
 
         return ViewHolder(view);
     }
@@ -20,7 +22,7 @@ class AppAdapter(private val context : Context, val appList : ArrayList<Data>) :
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        holder?.bind(appList[position])
+        holder.bind(appList[position])
     }
 
     inner class ViewHolder(view : View) : RecyclerView.ViewHolder(view){
@@ -39,31 +41,32 @@ class AppAdapter(private val context : Context, val appList : ArrayList<Data>) :
         }
 
         // 위험도에 따른 색상 변경
+        @SuppressLint("ResourceAsColor")
         fun setTextColor(dangerLevel : Int){
             when(dangerLevel){
                 0 -> {
-                    appName.setTextColor(ContextCompat.getColor(context, R.color.risk0))
-                    occurTime.setTextColor(ContextCompat.getColor(context, R.color.risk0))
-                    txBytes.setTextColor(ContextCompat.getColor(context, R.color.risk0))
-                    uid.setTextColor(ContextCompat.getColor(context, R.color.risk0))
+                    appName.setTextColor(Color.parseColor("#FF5EAEFF"))
+                    occurTime.setTextColor(Color.parseColor("#FF5EAEFF"))
+                    txBytes.setTextColor(Color.parseColor("#FF5EAEFF"))
+                    uid.setTextColor(Color.parseColor("#FF5EAEFF"))
                 }
                 1 -> {
-                    appName.setTextColor(ContextCompat.getColor(context, R.color.risk1))
-                    occurTime.setTextColor(ContextCompat.getColor(context, R.color.risk1))
-                    txBytes.setTextColor(ContextCompat.getColor(context, R.color.risk1))
-                    uid.setTextColor(ContextCompat.getColor(context, R.color.risk1))
+                    appName.setTextColor(Color.parseColor("#FFFFF200"))
+                    occurTime.setTextColor(Color.parseColor("#FFFFF200"))
+                    txBytes.setTextColor(Color.parseColor("#FFFFF200"))
+                    uid.setTextColor(Color.parseColor("#FFFFF200"))
                 }
                 2 -> {
-                    appName.setTextColor(ContextCompat.getColor(context, R.color.risk2))
-                    occurTime.setTextColor(ContextCompat.getColor(context, R.color.risk2))
-                    txBytes.setTextColor(ContextCompat.getColor(context, R.color.risk2))
-                    uid.setTextColor(ContextCompat.getColor(context, R.color.risk2))
+                    appName.setTextColor(Color.parseColor("#FFFF8040"))
+                    occurTime.setTextColor(Color.parseColor("#FFFF8040"))
+                    txBytes.setTextColor(Color.parseColor("#FFFF8040"))
+                    uid.setTextColor(Color.parseColor("#FFFF8040"))
                 }
                 3 -> {
-                    appName.setTextColor(ContextCompat.getColor(context, R.color.risk3))
-                    occurTime.setTextColor(ContextCompat.getColor(context, R.color.risk3))
-                    txBytes.setTextColor(ContextCompat.getColor(context, R.color.risk3))
-                    uid.setTextColor(ContextCompat.getColor(context, R.color.risk3))
+                    appName.setTextColor(Color.parseColor("#FF00"))
+                    occurTime.setTextColor(Color.parseColor("#FF00"))
+                    txBytes.setTextColor(Color.parseColor("#FF00"))
+                    uid.setTextColor(Color.parseColor("#FF00"))
                 }
             }
 
