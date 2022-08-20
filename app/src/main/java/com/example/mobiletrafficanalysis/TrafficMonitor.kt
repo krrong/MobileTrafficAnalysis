@@ -1,5 +1,6 @@
 package com.example.mobiletrafficanalysis
 
+import android.app.Activity
 import android.app.usage.NetworkStats
 import android.app.usage.NetworkStatsManager
 import android.content.Context
@@ -13,17 +14,18 @@ import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 
 
-class TrafficMonitor(private var context: Context,
-                              private var appDataList: ArrayList<Data>,
-                              private var whiteList: ArrayList<Int>,
-                              private var list: MutableList<ApplicationInfo>,
-                              private  var appHistory : HashMap<Int, Long>){
+class TrafficMonitor(private var context: Activity,
+//                     private var context: Context,
+                     private var appDataList: ArrayList<Data>,
+                     private var whiteList: ArrayList<Int>,
+                     private var list: MutableList<ApplicationInfo>,
+                     private var appHistory: HashMap<Int, Long>,
+                     private var touchDetect: TouchDetect){
 
     private val period : Long = 10000   // 송신 트래픽 계산 함수 재실행 시간
     private var timer : Timer? = null   // 타이머 객체
     private var timerTask : TimerTask? = null   // 타이머 태스크 객체 (실제로 하는 일)
     private var recyclerView : RecyclerView? = null
-    private var touchDetect : TouchDetect? = null
 
     // 생성자
     init {
@@ -31,10 +33,7 @@ class TrafficMonitor(private var context: Context,
         timer = Timer()
 
         // MainActivity의 리사이클러뷰를 받아옴
-        var activity = context as MainActivity
-        recyclerView = activity.findViewById<RecyclerView>(R.id.recyclerView)
-
-        touchDetect = TouchDetect(context, whiteList)
+        recyclerView = context.findViewById<RecyclerView>(R.id.recyclerView)
     }
 
     /**
@@ -57,13 +56,13 @@ class TrafficMonitor(private var context: Context,
      * 모니터링 시작 10초 주기로 트래픽 측정
      */
     fun startMonitoring(){
-        Log.e("TrafficMonitoring", "startMonitoring")
+        Log.d("TrafficMonitor", "startMonitoring")
         timerTask = object : TimerTask(){
             override fun run() {
                 getTxBytesForAllApp()
 
-                var activity = context as MainActivity
-                activity.runOnUiThread{
+//                var activity = context as MainActivity
+                context.runOnUiThread{
                     recyclerView?.adapter?.notifyDataSetChanged()
                 }
             }
@@ -76,7 +75,7 @@ class TrafficMonitor(private var context: Context,
      * 모니터링 종료
      */
     fun stopMonitoring(){
-        Log.e("TrafficMonitoring", "stopMonitoring")
+        Log.d("TrafficMonitor", "stopMonitoring")
         timerTask?.cancel()
     }
 
@@ -128,9 +127,9 @@ class TrafficMonitor(private var context: Context,
                 // TODO : 텍스트뷰의 색상을 변경할 수 있도록 dangerLevel 계산 필요
                 
                 // 패키지명
-                var fir = data?.getPackageName()
-                var sec = fir?.split("(")?.get(1)
-                var appName = sec?.split(")")?.get(0)
+                val fir = data?.getPackageName()
+                val sec = fir?.split("(")?.get(1)
+                val appName = sec?.split(")")?.get(0)
 
                 // 위험도 측정
                 val dangerLevel : Int? = touchDetect?.measureRisk(uid, appName!!)
@@ -139,8 +138,8 @@ class TrafficMonitor(private var context: Context,
                 }
 
 //                if(!isInWhiteList(data.getUid())){
-                    Log.e("UID", uid.toString())
-                    Log.e("txBytes", bucket.txBytes.toString())
+                    Log.d("TrafficMonitor", "Uid : "+ uid.toString())
+                    Log.d("TrafficMonitor", "Txbytes : " + bucket.txBytes.toString())
 
                     val curTxBytes = bucket.txBytes
 
@@ -162,50 +161,19 @@ class TrafficMonitor(private var context: Context,
                     }
 //                }
             }
-
-//            // data 가 유효하다면
-//            if(data != null) {
-//                // 화이트리스트에 들어가있지 않다면 송신 트래픽 측정
-//                if(!isInWhiteList(data.getPackageName())) {
-//                    Log.e("UID", uid.toString())
-//                    Log.e("txBytes", bucket.txBytes.toString())
-//
-//                    var txBytes = bucket.txBytes    // 앱 별 송신 트래픽
-//                    val bytes = data?.getTxBytes()
-//                    val diff = txBytes - bytes!!    // 현재 계산한 txBytes - 이전에 계산한 txBytes
-//
-//                    // 차이가 양수면 송신 기록이 있다는 의미-> 사용자에게 보여줘야 함
-//                    // 음수면 송신 데이터 양이 적어졌다는 뜻 --> 측정 시간동안 보내지 않았다고 할 수 있음
-//                    if (diff > 0L) {
-////                if (diff != 0L) {
-//                        appHistory.put(uid, diff)
-////                    if(appHistory.get(uid) == null){
-////                        appHistory.put(uid, diff)
-////                    }
-////                    else{
-////                        appHistory.replace(uid, diff)
-////                    }
-//                        // data 값 변경
-//                        data.setTxBytes(diff)
-//                        data.setDetectTime(getTime())
-//
-//                        // 가장 앞에 새로운 데이터 추가
-//                        appDataList.add(0, data)
-//                    }
-//                }
-//            }
         } while (networkStats.hasNextBucket())
         networkStats.close()
 
         // appHistory와 버킷에서 계산한 값들의 차이를 확인
         for(iter in measureTxBytes){
-            var data = iter.value
+            val data = iter.value
             
             // appHistory에 없다면 appHistory와 appDataList에 추가
             if(appHistory.contains(data.getUid()) == false){
                 appHistory.put(data.getUid(), data.getTxBytes())
                 data.setDetectTime(getTime())
                 appDataList.add(data)
+                Log.e("TrafficMonitor", data.getPackageName()+ " " + data.getRiskLevel().toString())
             }
             // appHistory에 있다면 차이 계산
             else{
@@ -217,6 +185,8 @@ class TrafficMonitor(private var context: Context,
                     data.setDetectTime(getTime())
                     appDataList.add(0, data)
                     appHistory.put(data.getUid(), diff)
+
+                    Log.e("TrafficMonitor", data.getPackageName()+ " " + data.getRiskLevel().toString())
                 }
             }
         }
