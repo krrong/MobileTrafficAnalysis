@@ -1,6 +1,5 @@
-package com.example.mobiletrafficanalysis
+package com.example.mobiletrafficanalysis.Service
 
-import android.R
 import android.annotation.SuppressLint
 import android.app.*
 import android.content.Context
@@ -18,6 +17,11 @@ import androidx.core.app.NotificationCompat
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.example.mobiletrafficanalysis.Activity.MainActivity
+import com.example.mobiletrafficanalysis.Adapter.AppAdapter
+import com.example.mobiletrafficanalysis.Class.Data
+import com.example.mobiletrafficanalysis.Class.TouchDetect
+import com.example.mobiletrafficanalysis.Class.TrafficMonitor
 
 class DetectService() : Service() {
     var touchDetect : TouchDetect? = null       // 터치 감지 클래스

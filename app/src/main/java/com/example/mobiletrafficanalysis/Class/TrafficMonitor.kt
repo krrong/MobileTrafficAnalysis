@@ -1,4 +1,4 @@
-package com.example.mobiletrafficanalysis
+package com.example.mobiletrafficanalysis.Class
 
 import android.app.Activity
 import android.app.usage.NetworkStats
@@ -8,19 +8,20 @@ import android.content.pm.ApplicationInfo
 import android.net.NetworkCapabilities
 import android.util.Log
 import androidx.recyclerview.widget.RecyclerView
+import com.example.mobiletrafficanalysis.R
 import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 
 
-class TrafficMonitor(private var context: Activity,
-//                     private var context: Context,
+class TrafficMonitor(private var mainActivity: Activity,
                      private var appDataList: ArrayList<Data>,
                      private var whiteList: ArrayList<Int>,
                      private var list: MutableList<ApplicationInfo>,
                      private var appHistory: HashMap<Int, Long>,
-                     private var touchDetect: TouchDetect){
+                     private var touchDetect: TouchDetect
+){
 
     private val period : Long = 10000   // 송신 트래픽 계산 함수 재실행 시간
     private var timer : Timer? = null   // 타이머 객체
@@ -33,14 +34,7 @@ class TrafficMonitor(private var context: Activity,
         timer = Timer()
 
         // MainActivity의 리사이클러뷰를 받아옴
-        recyclerView = context.findViewById<RecyclerView>(R.id.recyclerView)
-    }
-
-    /**
-     * 패키지 명이 화이트 리스트에 있는지 반환
-     */
-    fun isInWhiteList(uid : Int) : Boolean {
-        return whiteList.contains(uid)
+        recyclerView = mainActivity.findViewById<RecyclerView>(R.id.recyclerView)
     }
 
     /**
@@ -62,7 +56,7 @@ class TrafficMonitor(private var context: Activity,
                 getTxBytesForAllApp()
 
 //                var activity = context as MainActivity
-                context.runOnUiThread{
+                mainActivity.runOnUiThread{
                     recyclerView?.adapter?.notifyDataSetChanged()
                 }
             }
@@ -85,7 +79,7 @@ class TrafficMonitor(private var context: Activity,
     fun getTxBytesForAllApp() {
         // networkStatsManager 생성
         val networkStatsManager =
-            context.getSystemService(Context.NETWORK_STATS_SERVICE) as NetworkStatsManager
+            mainActivity.getSystemService(Context.NETWORK_STATS_SERVICE) as NetworkStatsManager
 
         // packageNameList는 uid를 이용하여 Data 객체를 가져오는 용도로 사용
         // measureTxBytes는 같은 uid에서 발생한 txBytes를 계산하고 history와 비교하는 용도로 사용
@@ -94,7 +88,7 @@ class TrafficMonitor(private var context: Activity,
 
         for (app in list){
             // 앱 이름 얻어오기
-            val label = context.packageManager.getApplicationLabel(app)
+            val label = mainActivity.packageManager.getApplicationLabel(app)
 
             // packageNameList 는 uid를 이용하여 Data 객체를 가져오는 용도로 사용
             packageNameList.put(app.uid, Data(label.toString() + "(" + app.packageName + ")", "", app.uid, 0L, -1))

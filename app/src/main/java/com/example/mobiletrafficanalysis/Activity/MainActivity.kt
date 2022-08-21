@@ -1,4 +1,4 @@
-package com.example.mobiletrafficanalysis
+package com.example.mobiletrafficanalysis.Activity
 
 import android.annotation.SuppressLint
 import android.app.Activity
@@ -11,14 +11,12 @@ import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import android.util.Log
-import android.view.View
-import android.widget.Button
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.recyclerview.widget.DividerItemDecoration
-import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
-import java.net.Socket
+import com.example.mobiletrafficanalysis.Fragment.MonitorFragment
+import com.example.mobiletrafficanalysis.Fragment.WhiteListFragment
+import com.example.mobiletrafficanalysis.R
+import com.google.android.material.bottomnavigation.BottomNavigationView
 
 
 class MainActivity : AppCompatActivity() {
@@ -56,78 +54,30 @@ class MainActivity : AppCompatActivity() {
             checkPermission2()
 
             initView()
-            
-            // list, whiteList 초기화
-//            makeWhiteList()
-            
-//            val trafficMonitor = TrafficMonitor(this, appDataList, whiteList, list, appHistory) // TrafficMonitor 생성
-
-            val operationBtn = findViewById<Button>(R.id.operationBtn)
-            operationBtn.setOnClickListener(View.OnClickListener {
-                // 모니터링이 진행중이지 않다면 실행
-                if(isMonitoring == 0){
-                    isMonitoring = 1
-//                    trafficMonitor.startMonitoring()
-                    startDetectService()
-                    operationBtn.text = "ON"
-                }
-                // 모니터링이 진행중이면 종료
-                else{
-                    isMonitoring = 0
-//                    trafficMonitor.stopMonitoring()
-                    stopDetectService()
-                    operationBtn.text = "OFF"
-                }
-            })
         }
     }
 
     @SuppressLint("ClickableViewAccessibility")
     private fun initView() {
-//        recyclerView = findViewById<RecyclerView>(R.id.recyclerView)
-//        val layoutManager = LinearLayoutManager(this)
-////        val appAdapter = AppAdapter(this, appDataList)
-//        val appAdapter = AppAdapter(appDataList)
-//        val dividerItemDecoration = DividerItemDecoration(recyclerView?.context, layoutManager.orientation)
-//
-//        recyclerView?.adapter = appAdapter
-//        recyclerView?.layoutManager = layoutManager
-//        recyclerView?.addItemDecoration(dividerItemDecoration)
-//        recyclerView?.setHasFixedSize(true)
-
-        val networkBtn = findViewById<Button>(R.id.networkBtn)
-        networkBtn.setOnClickListener(View.OnClickListener {
-            val networkThread = NetworkThread()
-            networkThread.start()
-        })
-
-//        dangerDivider = DangerDivider(this, whiteList)
-//        dangerDivider?.getForegroundApp()
-    }
-
-    /**
-     * 서버로 값을 보내 송신 트래픽을 증가시키는 스레드
-     */
-    inner class NetworkThread() : Thread(){
-        override fun run(){
-            try {
-                // 소켓 연결
-                val socket = Socket("172.20.10.2", 5000)
-                val outStream = socket.getOutputStream()
-                val data : Int = 3
-                
-                // 데이터 송신
-                outStream.write(data)
-                socket.close()
-            } catch (e: Exception) {
-                e.printStackTrace()
+        // 바텀 네비게이션 바
+        val bnv_menu = findViewById<BottomNavigationView>(R.id.bnv_main)
+        bnv_menu.run{
+            setOnItemSelectedListener { item ->
+                when(item.itemId){
+                    // 모니터링 페이지
+                    R.id.Monitor -> {
+                        val monitorFragment = MonitorFragment()
+                        supportFragmentManager.beginTransaction().replace(R.id.fragment_container, monitorFragment).commit()
+                    }
+                    // 화이트리스트 페이지
+                    R.id.WhiteList -> {
+                        val whiteListFragment = WhiteListFragment()
+                        supportFragmentManager.beginTransaction().replace(R.id.fragment_container, whiteListFragment).commit()
+                    }
+                }
+                true
             }
-//            // 송신이 끝나면 어댑터 내용 변경 후 어댑터에게 알림 -> 화면에 뜨는 데이터 변경
-//            runOnUiThread{
-//                val transmitByteByMobile = TrafficStats.getUidTxBytes(android.os.Process.myUid())
-//                appDataList[0].setTxBytes(transmitByteByMobile)
-//                appAdapter.notifyDataSetChanged()
-//            }
+            selectedItemId = R.id.Monitor
         }
     }
 
@@ -222,30 +172,5 @@ class MainActivity : AppCompatActivity() {
 //                }
             }
         }
-    }
-
-    /**
-     * 서비스 실행
-     */
-    private fun startDetectService(){
-        // 오레오 이상이면 startForegroundService 함수 사용
-        var intent : Intent = Intent(this, DetectService::class.java)
-        intent.putExtra("whiteList", whiteList)
-
-        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){
-            this.startForegroundService(intent)
-        }
-        // 오레오 이하이면 startService 함수 사용
-        else{
-            this.startService(intent)
-        }
-    }
-
-    /**
-     * service 종료
-     */
-    fun stopDetectService(){
-        val intent = Intent(this, DetectService::class.java)
-        stopService(intent)
     }
 }

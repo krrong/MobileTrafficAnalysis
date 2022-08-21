@@ -1,14 +1,14 @@
-package com.example.mobiletrafficanalysis
+package com.example.mobiletrafficanalysis.Adapter
 
 import android.annotation.SuppressLint
-import android.content.Context
 import android.graphics.Color
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
-import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
+import com.example.mobiletrafficanalysis.Class.Data
+import com.example.mobiletrafficanalysis.R
 
 class AppAdapter(val appList : ArrayList<Data>) : RecyclerView.Adapter<AppAdapter.ViewHolder>() {
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -45,31 +45,35 @@ class AppAdapter(val appList : ArrayList<Data>) : RecyclerView.Adapter<AppAdapte
         fun setTextColor(dangerLevel : Int){
             when(dangerLevel){
                 0 -> {
-                    appName.setTextColor(Color.parseColor("#FF5EAEFF"))
-                    occurTime.setTextColor(Color.parseColor("#FF5EAEFF"))
-                    txBytes.setTextColor(Color.parseColor("#FF5EAEFF"))
-                    uid.setTextColor(Color.parseColor("#FF5EAEFF"))
+                    // 검은색
+                    appName.setTextColor(Color.parseColor("#FF000000"))
+                    occurTime.setTextColor(Color.parseColor("#FF000000"))
+                    txBytes.setTextColor(Color.parseColor("#FF000000"))
+                    uid.setTextColor(Color.parseColor("#FF000000"))
                 }
                 1 -> {
-                    appName.setTextColor(Color.parseColor("#FFFFF200"))
-                    occurTime.setTextColor(Color.parseColor("#FFFFF200"))
-                    txBytes.setTextColor(Color.parseColor("#FFFFF200"))
-                    uid.setTextColor(Color.parseColor("#FFFFF200"))
+                    // 초록색
+                    appName.setTextColor(Color.parseColor("#FF00A653"))
+                    occurTime.setTextColor(Color.parseColor("#FF00A653"))
+                    txBytes.setTextColor(Color.parseColor("#FF00A653"))
+                    uid.setTextColor(Color.parseColor("#FF00A653"))
                 }
                 2 -> {
-                    appName.setTextColor(Color.parseColor("#FFFF8040"))
-                    occurTime.setTextColor(Color.parseColor("#FFFF8040"))
-                    txBytes.setTextColor(Color.parseColor("#FFFF8040"))
-                    uid.setTextColor(Color.parseColor("#FFFF8040"))
+                    // 주황색
+                    appName.setTextColor(Color.parseColor("#FFD96C00"))
+                    occurTime.setTextColor(Color.parseColor("#FFD96C00"))
+                    txBytes.setTextColor(Color.parseColor("#FFD96C00"))
+                    uid.setTextColor(Color.parseColor("#FFD96C00"))
                 }
                 3 -> {
+                    // 빨간색
                     appName.setTextColor(Color.parseColor("#FFFF0000"))
                     occurTime.setTextColor(Color.parseColor("#FFFF0000"))
                     txBytes.setTextColor(Color.parseColor("#FFFF0000"))
                     uid.setTextColor(Color.parseColor("#FFFF0000"))
                 }
             }
-
+            // FF5EAEFF : 하늘색
         }
     }
 }

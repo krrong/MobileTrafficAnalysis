@@ -1,13 +1,10 @@
-package com.example.mobiletrafficanalysis
+package com.example.mobiletrafficanalysis.Class
 
 import android.app.usage.UsageStats
 import android.app.usage.UsageStatsManager
 import android.content.Context
 import android.os.PowerManager
 import android.util.Log
-import java.time.LocalDateTime
-import java.time.temporal.ChronoUnit
-import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 

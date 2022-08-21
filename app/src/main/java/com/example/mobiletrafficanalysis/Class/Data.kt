@@ -1,4 +1,4 @@
-package com.example.mobiletrafficanalysis
+package com.example.mobiletrafficanalysis.Class
 
 public class Data {
     private var packageName : String = ""

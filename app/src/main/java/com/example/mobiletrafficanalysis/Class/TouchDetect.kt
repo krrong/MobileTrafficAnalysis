@@ -1,4 +1,4 @@
-package com.example.mobiletrafficanalysis
+package com.example.mobiletrafficanalysis.Class
 
 import android.app.usage.UsageStats
 import android.app.usage.UsageStatsManager
@@ -26,7 +26,7 @@ class TouchDetect(context : Context,
      * 패키지명, 마지막 터치 시간 추가
      */
     fun addEvent(){
-        val appName = getForegroundApp()    // 포그라운드 앱
+        val appName = getForegroundApp()    // 현재 포그라운드에 있는 앱 이름 반환
 
         // 현재 시간
         val curTime =
@@ -73,7 +73,7 @@ class TouchDetect(context : Context,
     }
 
     /**
-     * 위험도 구분 (0, 1, 2, 3)
+     * 위험도 측정 (0, 1, 2, 3)
      */
     fun measureRisk(uid : Int, appName: String) : Int {
         // 화이트리스트에 포함되어 있으면 0
@@ -101,7 +101,6 @@ class TouchDetect(context : Context,
      * uid가 화이트리스트에 있는지 반환
      */
     fun inWhiteList(uid : Int) : Boolean {
-        // 화이트리스트에 패키지명이 포함되어 있으면 true 반환
         if(whiteList!!.contains(uid)){
             return true
         }
