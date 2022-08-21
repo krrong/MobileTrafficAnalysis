@@ -34,14 +34,9 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private var appDataList = ArrayList<Data>()         // 어댑터에 추가할 앱 리스트 (패키지명, 총 송신 트래픽)으로 구성
-    private var appHistory = HashMap<Int, Long>()       // 앱의 이전 송신 트래픽 양 저장
     private var whiteList = ArrayList<Int>()            // 화이트 리스트 (ex. com.samsung.*, com.google.*)
     private var list = mutableListOf<ApplicationInfo>() // 설치된 어플리케이션의 정보를 저장하는 리스트
-    private var recyclerView : RecyclerView? = null     // 리사이클러뷰
     private var isMonitoring = 0                        // 모니터링이 진행 중인지 나타내는 플래그
-    private var dangerDivider : DangerDivider? = null
-    private var detectService : DetectService? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -63,7 +58,7 @@ class MainActivity : AppCompatActivity() {
             initView()
             
             // list, whiteList 초기화
-            makeWhiteList()
+//            makeWhiteList()
             
 //            val trafficMonitor = TrafficMonitor(this, appDataList, whiteList, list, appHistory) // TrafficMonitor 생성
 
@@ -80,7 +75,7 @@ class MainActivity : AppCompatActivity() {
                 else{
                     isMonitoring = 0
 //                    trafficMonitor.stopMonitoring()
-                    serviceStop()
+                    stopDetectService()
                     operationBtn.text = "OFF"
                 }
             })
@@ -176,23 +171,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * 서비스 실행
-     */
-    private fun startDetectService(){
-        // 오레오 이상이면 startForegroundService 함수 사용
-        var intent : Intent = Intent(this, DetectService::class.java)
-        intent.putExtra("whiteList", whiteList)
-
-        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){
-            this.startForegroundService(intent)
-        }
-        // 오레오 이하이면 startService 함수 사용
-        else{
-            this.startService(intent)
-        }
-    }
-
-    /**
      * 런타임 퍼미션 요청
      */
     private fun requestPermission(){
@@ -247,19 +225,26 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * intent를 통해 필요한 정보 전달 이후 service 시작
-     *
+     * 서비스 실행
      */
-    fun serviceStart(){
-        val intent = Intent(this, DetectService::class.java)
+    private fun startDetectService(){
+        // 오레오 이상이면 startForegroundService 함수 사용
+        var intent : Intent = Intent(this, DetectService::class.java)
         intent.putExtra("whiteList", whiteList)
-        startService(intent)
+
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){
+            this.startForegroundService(intent)
+        }
+        // 오레오 이하이면 startService 함수 사용
+        else{
+            this.startService(intent)
+        }
     }
 
     /**
      * service 종료
      */
-    fun serviceStop(){
+    fun stopDetectService(){
         val intent = Intent(this, DetectService::class.java)
         stopService(intent)
     }
