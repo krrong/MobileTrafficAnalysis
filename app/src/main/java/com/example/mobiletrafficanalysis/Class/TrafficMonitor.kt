@@ -119,7 +119,7 @@ class TrafficMonitor(private var mainActivity: Activity,
 
             if(data != null){
                 // TODO : 텍스트뷰의 색상을 변경할 수 있도록 dangerLevel 계산 필요
-                
+
                 // 패키지명
                 val fir = data?.getPackageName()
                 val sec = fir?.split("(")?.get(1)
@@ -161,18 +161,18 @@ class TrafficMonitor(private var mainActivity: Activity,
         // appHistory와 버킷에서 계산한 값들의 차이를 확인
         for(iter in measureTxBytes){
             val data = iter.value
-            
+
             // appHistory에 없다면 appHistory와 appDataList에 추가
             if(appHistory.contains(data.getUid()) == false){
                 appHistory.put(data.getUid(), data.getTxBytes())
                 data.setDetectTime(getTime())
-                appDataList.add(data)
+                appDataList.add(0, data)
                 Log.e("TrafficMonitor", data.getPackageName()+ " " + data.getRiskLevel().toString())
             }
             // appHistory에 있다면 차이 계산
             else{
                 val diff = data.getTxBytes() - appHistory.get(data.getUid())!!
-                
+
                 // 차이가 0보다 크면 송신 트래픽이 있다는 의미
                 //  --> appDataList에 추가
                 if(diff > 0){
