@@ -13,6 +13,7 @@ import android.provider.Settings
 import android.util.Log
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import com.example.mobiletrafficanalysis.Fragment.GuideFragment
 import com.example.mobiletrafficanalysis.Fragment.MonitorFragment
 import com.example.mobiletrafficanalysis.Fragment.WhiteListFragment
 import com.example.mobiletrafficanalysis.R
@@ -73,6 +74,10 @@ class MainActivity : AppCompatActivity() {
                     R.id.WhiteList -> {
                         val whiteListFragment = WhiteListFragment()
                         supportFragmentManager.beginTransaction().replace(R.id.fragment_container, whiteListFragment).commit()
+                    }
+                    R.id.Guide -> {
+                        val guideFragment = GuideFragment()
+                        supportFragmentManager.beginTransaction().replace(R.id.fragment_container, guideFragment).commit()
                     }
                 }
                 true
