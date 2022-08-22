@@ -19,5 +19,5 @@
             android:id="@+id/Guide"
             app:showAsAction="ifRoom"
             android:icon="@drawable/ic_launcher_foreground"
-            android:title="WhiteList" />
+            android:title="Guide" />
 </menu>
