@@ -36,6 +36,9 @@ class MainActivity : AppCompatActivity() {
     private var whiteList = ArrayList<Int>()            // 화이트 리스트 (ex. com.samsung.*, com.google.*)
     private var list = mutableListOf<ApplicationInfo>() // 설치된 어플리케이션의 정보를 저장하는 리스트
     private var isMonitoring = 0                        // 모니터링이 진행 중인지 나타내는 플래그
+    private var monitorFragment : MonitorFragment? = null    // 모니터링 프래그먼트
+    private var whiteListFragment : WhiteListFragment? = null   // 화이트리스트 프래그먼트
+    private var guideFragment : GuideFragment? = null           // 가이드 프래그먼트
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -53,31 +56,60 @@ class MainActivity : AppCompatActivity() {
         else{
             // 퍼미션이 없으면 요청
             checkPermission2()
-
-            initView()
+            inItNavigationView()
         }
     }
 
     @SuppressLint("ClickableViewAccessibility")
-    private fun initView() {
+    /**
+     * 바텀 네비게이션 연결 및 선택 리스너 연결
+     * replace를 통해 프래그먼트를 띄우면 새로 오픈되는 것이기 때문에 이전 정보가 남아있지 않음
+     * show, hide를 통해 선택한 프래그먼트만 보여주도록 진행
+     */
+    private fun inItNavigationView() {
         // 바텀 네비게이션 바
         val bnv_menu = findViewById<BottomNavigationView>(R.id.bnv_main)
         bnv_menu.run{
-            setOnItemSelectedListener { item ->
-                when(item.itemId){
-                    // 모니터링 페이지
+            setOnItemSelectedListener {
+                when(it.itemId){
+                    // 모니터 프래그먼트 선택 시
                     R.id.Monitor -> {
-                        val monitorFragment = MonitorFragment()
-                        supportFragmentManager.beginTransaction().replace(R.id.fragment_container, monitorFragment).commit()
+                        // 처음 선택 시 초기화 및 추가
+                        if (monitorFragment == null) {
+                            monitorFragment = MonitorFragment()
+                            supportFragmentManager.beginTransaction().add(R.id.fragment_container, monitorFragment!!).commit()
+                        }
+
+                        // 선택된 프래그먼트만 보이도록 변경
+                        if(monitorFragment != null) supportFragmentManager.beginTransaction().show(monitorFragment!!).commit()
+                        if(whiteListFragment != null) supportFragmentManager.beginTransaction().hide(whiteListFragment!!).commit()
+                        if(guideFragment != null) supportFragmentManager.beginTransaction().hide(guideFragment!!).commit()
                     }
-                    // 화이트리스트 페이지
+                    // 화이트리스트 프래그먼트 선택 시
                     R.id.WhiteList -> {
-                        val whiteListFragment = WhiteListFragment()
-                        supportFragmentManager.beginTransaction().replace(R.id.fragment_container, whiteListFragment).commit()
+                        // 처음 선택 시 초기화 및 추가
+                        if (whiteListFragment == null) {
+                            whiteListFragment = WhiteListFragment()
+                            supportFragmentManager.beginTransaction().add(R.id.fragment_container, whiteListFragment!!).commit()
+                        }
+
+                        // 선택된 프래그먼트만 보이도록 변경
+                        if(monitorFragment != null) supportFragmentManager.beginTransaction().hide(monitorFragment!!).commit()
+                        if(whiteListFragment != null) supportFragmentManager.beginTransaction().show(whiteListFragment!!).commit()
+                        if(guideFragment != null) supportFragmentManager.beginTransaction().hide(guideFragment!!).commit()
                     }
+                    // 가이드 프래그먼트 선택 시
                     R.id.Guide -> {
-                        val guideFragment = GuideFragment()
-                        supportFragmentManager.beginTransaction().replace(R.id.fragment_container, guideFragment).commit()
+                        // 처음 선택 시 초기화 및 추가
+                        if (monitorFragment == null) {
+                            guideFragment = GuideFragment()
+                            supportFragmentManager.beginTransaction().add(R.id.fragment_container, guideFragment!!).commit()
+                        }
+
+                        // 선택된 프래그먼트만 보이도록 변경
+                        if(monitorFragment != null) supportFragmentManager.beginTransaction().hide(monitorFragment!!).commit()
+                        if(whiteListFragment != null) supportFragmentManager.beginTransaction().hide(whiteListFragment!!).commit()
+                        if(guideFragment != null) supportFragmentManager.beginTransaction().show(guideFragment!!).commit()
                     }
                 }
                 true
