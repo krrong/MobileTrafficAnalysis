@@ -27,10 +27,21 @@ class WhiteListAdapter(val dataList : ArrayList<AppInfo>) : RecyclerView.Adapter
     inner class ViewHolder(view : View) : RecyclerView.ViewHolder(view){
         private val imageView = view.findViewById<ImageView>(R.id.imageView)
         private val appName = view.findViewById<TextView>(R.id.packageName)
+        private val addImageView = view.findViewById<ImageView>(R.id.addImageView)
 
         fun bind(item: AppInfo){
-            appName?.text = "Name : " + item.getPackageName()
+            appName?.text = item.getAppName()
             imageView.setImageDrawable(item.getIcon())
+            isInWhiteList(item, addImageView)
+        }
+
+        fun isInWhiteList(item : AppInfo, addImageView: ImageView){
+            if(item.getinWhiteList() == true){
+                addImageView.setImageResource(R.drawable.minus)
+            }
+            else{
+                addImageView.setImageResource(R.drawable.plus)
+            }
         }
     }
 }
