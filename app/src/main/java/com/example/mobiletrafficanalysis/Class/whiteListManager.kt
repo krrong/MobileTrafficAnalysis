@@ -9,6 +9,7 @@ import android.content.pm.ApplicationInfo
 import android.net.NetworkCapabilities
 import android.os.RemoteException
 import androidx.fragment.app.FragmentActivity
+import com.example.mobiletrafficanalysis.Activity.MainActivity
 import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
@@ -16,25 +17,20 @@ import kotlin.collections.HashMap
 
 class whiteListManager(mainActivity: Activity, dataList : ArrayList<AppInfo>) {
     private var activity = mainActivity
-    private var whiteList = ArrayList<Int>()                // 화이트 리스트 (ex. com.samsung.*, com.google.*)
-    private var packageNameSet : HashSet<String>? = null    // 화이트리스트에 저장된 앱들의 package name
-    private var isInitialize = false                        // 초기화 플래그
-    private var dataList = dataList
+    private var whiteList = ArrayList<Int>()                // 화이트리스트 (ex. com.samsung.*, com.google.*)
+    private var dataList = dataList                         // 화이트리스트 어댑터에 연결한 데이터리스트(이름, 아이콘, 화이트리스트 존재 여부)
 
     /**
      * 화이트리스트 초기화
      */
     fun initializeWhiteList(){
-        // 이미 초기화를 진행했다면 진행하지 않음
-        if(isInitialize == true)
-            return
+        var isInitialize = MainActivity.prefs.getString("initialize", null)
 
-        // 초기화 플래그 true 로 변경
-        isInitialize = true
-        
+
+
         val appSet = HashSet<Int>() // 네트워크 사용 앱 이름을 저장하는 set
 
-        val networkStatsManager = activity?.applicationContext?.getSystemService(Context.NETWORK_STATS_SERVICE) as NetworkStatsManager
+        val networkStatsManager = activity.applicationContext?.getSystemService(Context.NETWORK_STATS_SERVICE) as NetworkStatsManager
 
         // 설치된 앱들 중에서 네트워크 사용 이력이 있는 앱들 정보 저장
         try {
@@ -60,18 +56,31 @@ class whiteListManager(mainActivity: Activity, dataList : ArrayList<AppInfo>) {
         }
 
         // 설치된 앱 중 네트워크 사용 이력 있는 앱들만 저장
-        val apps = activity?.packageManager?.getInstalledApplications(0)
+        val apps = activity.packageManager?.getInstalledApplications(0)
 
         for (app in apps!!) {
             val packageName = app.packageName
-            val label = activity?.packageManager?.getApplicationLabel(app) as String
-            val icon = activity?.packageManager?.getApplicationIcon(packageName)
+            val label = activity.packageManager?.getApplicationLabel(app) as String
+            val icon = activity.packageManager?.getApplicationIcon(packageName)
             val uid = app.uid
 
             // 네트워크 사용하지 이력이 없는 앱이면 pass
             if (!appSet.contains(uid)) continue
 
-            makeWhiteList()
+            // 초기화를 진행한 적 없다면 makeWhiteList() 함수를 이용하여 화이트리스트 생성
+            if(isInitialize == null){
+                makeWhiteList()
+
+                // 초기화를 처음 진행하면 초기화 플래그 true 로 변경
+                val editor = MainActivity.prefs.edit()
+                isInitialize = "1"
+                editor.putString("initialize", isInitialize)
+                editor.apply()
+            }
+            // 초기화를 진행한 적이 있다면 저장된 화이트리스트를 불러온다.
+            else{
+                whiteList = loadWhiteList() as ArrayList<Int>
+            }
 
             // 네트워크 사용한 이력이 있는 앱은 화이트리스트에 있는지 여부 플래그와 함께 저장
             val isinWhiteList = isinWhiteList(app.uid)
@@ -80,24 +89,44 @@ class whiteListManager(mainActivity: Activity, dataList : ArrayList<AppInfo>) {
     }
 
     /**
-     * 기존에 가지고 있는 화이트리스트를 반환
+     * 기존에 저장했던 화이트리스트 반환
+     * @return 화이트리스트의 uid 를 MutableList<Int> 로 반환
      */
-    fun loadWhiteList() : HashSet<String>{
-        val prefs = activity!!.getSharedPreferences("appUidSet", Context.MODE_PRIVATE)
-        val data = prefs.getStringSet("packageNameSet", null)
-        return HashSet(data)
+    fun loadWhiteList() : MutableList<Int> {
+        // "," 기준으로 uid split
+        val data = MainActivity.prefs.getString("uidSet", null)?.split(",")?.toMutableList()
+        val result : MutableList<Int> = mutableListOf<Int>()
+
+        // 각 원소를 Int 형태로 변경하여 다시 저장
+        // 첫 번째 원소 형태 : "[ 1000"
+        // 마지막 원소 형태 : " 1000]"
+        // 나머지 원소 형태 : " 1000"
+        for(i in 0 until data!!.size){
+            if(i == 0){
+                data[i] = data[i].removePrefix("[")
+            }
+            else if(i == data!!.size - 1){
+                data[i] = data[i].removePrefix(" ")
+                data[i] = data[i].removeSuffix("]")
+            }
+            else{
+                data[i] = data[i].removePrefix(" ")
+            }
+            result.add(data[i].toInt())
+        }
+        return result
     }
 
     /**
-     * 화이트리스트를 새로 저장 
+     * 화이트리스트 새로 저장
      */
     fun saveWhiteList(){
-        val prefs = activity!!.getSharedPreferences("appUidSet", Context.MODE_PRIVATE)
-        val editor = prefs.edit()
+        val editor = MainActivity.prefs.edit()
+        val data = whiteList.toString()
 
         // 저장되어있던 SharedPreferences 삭제 후 다시 저장
-        editor.clear()  
-        editor.putStringSet("packageNameSet", packageNameSet)
+        editor.clear()
+        editor.putString("uidSet", data)
         editor.apply()
     }
 
@@ -107,7 +136,7 @@ class whiteListManager(mainActivity: Activity, dataList : ArrayList<AppInfo>) {
      */
     private fun makeWhiteList(){
         // 설치되어 있는 어플리케이션의 패키지명 가져오기
-        val list = activity?.packageManager?.getInstalledApplications(0) as MutableList<ApplicationInfo>
+        val list = activity.packageManager?.getInstalledApplications(0) as MutableList<ApplicationInfo>
 
         // 화이트 리스트에 추가
         for (app in list){
