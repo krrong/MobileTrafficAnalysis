@@ -8,6 +8,7 @@ import android.content.Context
 import android.content.pm.ApplicationInfo
 import android.net.NetworkCapabilities
 import android.os.RemoteException
+import android.util.Log
 import androidx.fragment.app.FragmentActivity
 import com.example.mobiletrafficanalysis.Activity.MainActivity
 import java.util.*
@@ -25,9 +26,6 @@ class whiteListManager(mainActivity: Activity, dataList : ArrayList<AppInfo>) {
      */
     fun initializeWhiteList(){
         var isInitialize = MainActivity.prefs.getString("initialize", null)
-
-
-
         val appSet = HashSet<Int>() // 네트워크 사용 앱 이름을 저장하는 set
 
         val networkStatsManager = activity.applicationContext?.getSystemService(Context.NETWORK_STATS_SERVICE) as NetworkStatsManager
@@ -83,8 +81,8 @@ class whiteListManager(mainActivity: Activity, dataList : ArrayList<AppInfo>) {
             }
 
             // 네트워크 사용한 이력이 있는 앱은 화이트리스트에 있는지 여부 플래그와 함께 저장
-            val isinWhiteList = isinWhiteList(app.uid)
-            dataList.add(AppInfo(label, icon!!, isinWhiteList))
+            val isinWhiteList = isinWhiteList(uid)
+            dataList.add(AppInfo(label, icon!!, isinWhiteList, uid))
         }
     }
 
@@ -158,5 +156,29 @@ class whiteListManager(mainActivity: Activity, dataList : ArrayList<AppInfo>) {
             return true
         }
         return false
+    }
+
+    /**
+     * uid를 화이트리스트에서 삭제
+     */
+    fun delete(uid : Int){
+        Log.d("whiteListManager", "delete 함수 실행")
+
+        if(isinWhiteList(uid) == true){
+            whiteList.remove(uid)
+        }
+        saveWhiteList()
+    }
+
+    /**
+     *  uid를 화이트리스트에 추가
+     */
+    fun add(uid : Int){
+        Log.d("whiteListManager", "add 함수 실행")
+
+        if(isinWhiteList(uid) == false){
+            whiteList.add(uid)
+        }
+        saveWhiteList()
     }
 }
