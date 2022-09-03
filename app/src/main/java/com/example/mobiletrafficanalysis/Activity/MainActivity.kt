@@ -5,6 +5,7 @@ import android.app.Activity
 import android.app.AppOpsManager
 import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
 import android.content.pm.ApplicationInfo
 import android.net.Uri
 import android.os.Build
@@ -18,6 +19,7 @@ import com.example.mobiletrafficanalysis.Fragment.MonitorFragment
 import com.example.mobiletrafficanalysis.Fragment.WhiteListFragment
 import com.example.mobiletrafficanalysis.R
 import com.google.android.material.bottomnavigation.BottomNavigationView
+import java.util.HashSet
 
 
 class MainActivity : AppCompatActivity() {
@@ -27,16 +29,26 @@ class MainActivity : AppCompatActivity() {
 
     companion object{
         var instance : MainActivity? = null
+        var whiteList = ArrayList<Int>()            // 화이트 리스트 (ex. com.samsung.*, com.google.*)
+        lateinit var prefs : SharedPreferences
 
         fun getActivity():Activity{
             return instance!!
         }
+
+        @JvmName("getWhiteList1")
+        fun getWhiteList() : ArrayList<Int>{
+            return whiteList
+        }
+
+        @JvmName("setWhiteList1")
+        fun setWhiteList(whiteList : ArrayList<Int>){
+            this.whiteList = whiteList
+        }
     }
 
-    private var whiteList = ArrayList<Int>()            // 화이트 리스트 (ex. com.samsung.*, com.google.*)
-    private var list = mutableListOf<ApplicationInfo>() // 설치된 어플리케이션의 정보를 저장하는 리스트
-    private var isMonitoring = 0                        // 모니터링이 진행 중인지 나타내는 플래그
-    private var monitorFragment : MonitorFragment? = null    // 모니터링 프래그먼트
+    private var list = mutableListOf<ApplicationInfo>()         // 설치된 어플리케이션의 정보를 저장하는 리스트
+    private var monitorFragment : MonitorFragment? = null       // 모니터링 프래그먼트
     private var whiteListFragment : WhiteListFragment? = null   // 화이트리스트 프래그먼트
     private var guideFragment : GuideFragment? = null           // 가이드 프래그먼트
 
