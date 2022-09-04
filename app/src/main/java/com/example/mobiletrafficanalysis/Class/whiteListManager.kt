@@ -181,4 +181,11 @@ class whiteListManager(mainActivity: Activity, dataList : ArrayList<AppInfo>) {
         }
         saveWhiteList()
     }
+
+    /**
+     * 현재 화이트리스트 반환
+     */
+    fun getCurrentWhiteList() : ArrayList<Int>{
+        return this.whiteList
+    }
 }
