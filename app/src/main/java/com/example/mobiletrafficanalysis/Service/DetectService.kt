@@ -24,7 +24,7 @@ import com.example.mobiletrafficanalysis.Class.TouchDetect
 import com.example.mobiletrafficanalysis.Class.TrafficMonitor
 
 class DetectService() : Service() {
-    var touchDetect : TouchDetect? = null       // 터치 감지 클래스
+//    var touchDetect : TouchDetect? = null       // 터치 감지 클래스
     var windowManager : WindowManager? = null   // 오버레이 뷰 생성을 위해 필요
     var overlayView : View? = null              // 오베레이 뷰
     var trafficMonitor : TrafficMonitor? = null // 송신 트래픽 감지 클래스
@@ -45,15 +45,15 @@ class DetectService() : Service() {
         initView()      // 리사이클러뷰 연결
         makeWhiteList() // 화이트리스트 생성
 
-        // 메인 액티비티
-        val mainActivity : Activity = MainActivity.getActivity()
+        val whiteList = MainActivity.getWhiteList()     // 화이트리스트 (MainActivity 에서 받아와 사용)
+        val mainActivity : Activity = MainActivity.getActivity()    // 메인 액티비티 (MainActivity 에서 받아와 사용)
 
-        touchDetect = TouchDetect(mainActivity, whiteList)  // 터치 감지 클래스 초기화
-        trafficMonitor = TrafficMonitor(mainActivity, appDataList, whiteList, list, appHistory, touchDetect!!) // 송신 트래픽 감지 클래스 초기화
+//        touchDetect = TouchDetect(mainActivity, whiteList)  // 터치 감지 클래스 초기화
+        trafficMonitor = TrafficMonitor(mainActivity, appDataList, whiteList, list, appHistory) // 송신 트래픽 감지 클래스 초기화
     }
 
     /**
-     * MainActivity의 recycler를 받아옴
+     * MainActivity의 recyclerView를 받아옴
      * DetectService가 가지고 있는 appDataList를 어댑터 리스트로 사용
      */
     fun initView(){
@@ -132,7 +132,7 @@ class DetectService() : Service() {
 
         // 오버레이 위치 설정
         params.gravity = Gravity.LEFT or Gravity.BOTTOM
-        
+
         // 오버레이 뷰 인플레이션
         overlayView = layoutInflater.inflate(com.example.mobiletrafficanalysis.R.layout.overlay_view, null)
 
@@ -142,7 +142,8 @@ class DetectService() : Service() {
             override fun onTouch(v: View?, event: MotionEvent?): Boolean {
                 Log.d("DetectService", "Occur Touch Event")
                 // 터치 감지 시 포어그라운드 앱의 터치 발생 시간 업데이트
-                touchDetect?.addEvent()
+//                touchDetect?.addEvent()
+                trafficMonitor?.touchDetect?.addEvent()
                 return true
             }
         })
