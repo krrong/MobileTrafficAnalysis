@@ -6,6 +6,7 @@ import android.app.usage.NetworkStatsManager
 import android.content.Context
 import android.content.pm.ApplicationInfo
 import android.net.NetworkCapabilities
+import android.text.method.Touch
 import android.util.Log
 import androidx.recyclerview.widget.RecyclerView
 import com.example.mobiletrafficanalysis.R
@@ -20,18 +21,22 @@ class TrafficMonitor(private var mainActivity: Activity,
                      private var whiteList: ArrayList<Int>,
                      private var list: MutableList<ApplicationInfo>,
                      private var appHistory: HashMap<Int, Long>,
-                     private var touchDetect: TouchDetect
+//                     private var touchDetect: TouchDetect
 ){
 
     private val period : Long = 10000   // 송신 트래픽 계산 함수 재실행 시간
     private var timer : Timer? = null   // 타이머 객체
     private var timerTask : TimerTask? = null   // 타이머 태스크 객체 (실제로 하는 일)
     private var recyclerView : RecyclerView? = null
+    var touchDetect : TouchDetect? = null
 
     // 생성자
     init {
         // 타이머 생성
         timer = Timer()
+
+        // touchDetect 클래스를 인자로 받아오지 않고 내부에서 생성
+        touchDetect = TouchDetect(mainActivity, whiteList)
 
         // MainActivity의 리사이클러뷰를 받아옴
         recyclerView = mainActivity.findViewById<RecyclerView>(R.id.recyclerView)
