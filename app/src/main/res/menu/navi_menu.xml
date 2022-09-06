@@ -6,18 +6,19 @@
             android:id="@+id/Monitor"
             app:showAsAction="ifRoom"
             android:enabled="true"
-            android:icon="@drawable/ic_launcher_foreground"
+            android:icon="@drawable/monitor"
             android:title="Monitor" />
 
         <item
             android:id="@+id/WhiteList"
             app:showAsAction="ifRoom"
-            android:icon="@drawable/ic_launcher_foreground"
+            android:enabled="true"
+            android:icon="@drawable/whitelist"
             android:title="WhiteList" />
 
-        <item
-            android:id="@+id/Guide"
-            app:showAsAction="ifRoom"
-            android:icon="@drawable/ic_launcher_foreground"
-            android:title="Guide" />
+<!--        <item-->
+<!--            android:id="@+id/Guide"-->
+<!--            app:showAsAction="ifRoom"-->
+<!--            android:icon="@drawable/ic_launcher_foreground"-->
+<!--            android:title="Guide" />-->
 </menu>
